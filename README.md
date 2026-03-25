@@ -1,16 +1,16 @@
-# React + Vite
+STACKED AI (v6.3)
+Lead Architect: Dhruvi Desai
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Framework: React / Tailwind-inspired CSS / LocalStorage Persistence
 
-Currently, two official plugins are available:
+Overview: > A high-fidelity liquidity management tool designed for the "Social Quant." Stacked AI bridges the gap between complex accounting and rapid-fire personal finance. Featuring a proprietary logic engine, the app tracks real-time velocity, automated recurring flows, and capital milestones.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Core Features:
 
-## React Compiler
+Stealth Mode: Instant UI blurring for privacy in public spaces.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Velocity Analytics: 7-point momentum tracking via integrated bar-charts.
 
-## Expanding the ESLint configuration
+The Coach: A conversational AI interface synced with the user’s net-flow data.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Zero-Server Architecture: 100% client-side persistence for maximum data privacy.
