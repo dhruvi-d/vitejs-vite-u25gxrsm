@@ -63,16 +63,18 @@ export default function App() {
     }
   };
 
+  // --- DESIGN SYSTEM ---
   const theme = isDarkMode ? 
     { bg: '#000', text: '#FFF', card: '#111', accent: '#007AFF', border: '#222' } : 
     { bg: '#F2F2F7', text: '#000', card: '#FFF', accent: '#007AFF', border: '#E5E5EA' };
 
   const s = {
     container: { minHeight: '100vh', background: theme.bg, color: theme.text, fontFamily: 'Inter, -apple-system, sans-serif', padding: '24px', transition: '0.4s', WebkitFontSmoothing: 'antialiased' },
-    numbers: { fontVariantNumeric: 'tabular-nums', letterSpacing: '-2px', fontWeight: '800' },
+    // UNIFIED NUMBER STYLE
+    numbers: { fontVariantNumeric: 'tabular-nums', letterSpacing: '-1px', fontWeight: '800', fontFamily: 'Inter, sans-serif' },
     label: { fontSize: '11px', color: '#8E8E93', fontWeight: '600', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' },
     card: { background: theme.card, padding: '24px', borderRadius: '32px', marginBottom: '16px', border: `1px solid ${theme.border}` },
-    input: { background: 'none', border: 'none', color: theme.accent, textAlign: 'right', fontSize: '20px', width: '60%', outline: 'none', fontWeight: '800', fontFamily: 'Inter' }
+    inputBase: { background: 'none', border: 'none', color: theme.text, outline: 'none', fontFamily: 'Inter, sans-serif' }
   };
 
   return (
@@ -94,7 +96,7 @@ export default function App() {
           <main>
             <div style={{ textAlign: 'center', marginBottom: '50px' }}>
               <p style={s.label}>LIQUIDITY POSITION</p>
-              <h1 style={{ ...s.numbers, fontSize: '4.8rem', margin: '15px 0', filter: isStealth ? 'blur(25px)' : 'none' }}>
+              <h1 style={{ ...s.numbers, fontSize: '4.8rem', margin: '15px 0', filter: isStealth ? 'blur(25px)' : 'none', letterSpacing: '-4px' }}>
                 ${stack.toLocaleString()}
               </h1>
               <div style={{width: '60px', height: '3px', background: theme.accent, margin: '0 auto 30px auto', borderRadius: '10px'}}></div>
@@ -105,7 +107,7 @@ export default function App() {
                {history.slice(0, 3).map(h => (
                  <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', borderBottom: `1px solid ${theme.border}` }}>
                    <span style={{fontSize: '15px', fontWeight: '500'}}>{h.label}</span>
-                   <span style={{ ...s.numbers, color: h.amount > 0 ? '#34C759' : '#FF3B30' }}>{h.amount > 0 ? '+' : '-'}${Math.abs(h.amount).toLocaleString()}</span>
+                   <span style={{ ...s.numbers, fontSize: '16px', color: h.amount > 0 ? '#34C759' : '#FF3B30' }}>{h.amount > 0 ? '+' : '-'}${Math.abs(h.amount).toLocaleString()}</span>
                  </div>
                ))}
             </div>
@@ -116,8 +118,8 @@ export default function App() {
           <main>
             <div style={s.card}>
                <p style={s.label}>INPUT LOG</p>
-               <input id="l-label" placeholder="Source" style={{width:'100%', background:'none', border:'none', borderBottom:`1px solid ${theme.border}`, color:theme.text, padding:'15px 0', marginBottom:'10px', outline:'none', fontSize:'18px'}} />
-               <input id="l-amt" type="number" placeholder="0.00" style={{...s.numbers, width:'100%', background:'none', border:'none', borderBottom:`1px solid ${theme.border}`, color:theme.text, padding:'15px 0', marginBottom:'25px', outline:'none', fontSize:'24px'}} />
+               <input id="l-label" placeholder="Source" style={{...s.inputBase, width:'100%', borderBottom:`1px solid ${theme.border}`, padding:'15px 0', marginBottom:'10px', fontSize:'18px'}} />
+               <input id="l-amt" type="number" placeholder="0.00" style={{...s.inputBase, ...s.numbers, width:'100%', borderBottom:`1px solid ${theme.border}`, padding:'15px 0', marginBottom:'25px', fontSize:'24px'}} />
                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
                   <button onClick={() => handleLog('income')} style={{padding:'18px', borderRadius:'20px', border:'none', background: isDarkMode ? '#FFF' : '#000', color: isDarkMode ? '#000' : '#FFF', fontWeight:'900'}}>INCOME</button>
                   <button onClick={() => handleLog('spend')} style={{padding:'18px', borderRadius:'20px', border:'none', background:'#333', color:'#FFF', fontWeight:'900'}}>SPEND</button>
@@ -129,7 +131,7 @@ export default function App() {
               {recurring.map(r => (
                 <div key={r.id} style={{display:'flex', justifyContent:'space-between', padding:'15px 0', borderBottom:`1px solid ${theme.border}`, fontSize:'14px'}}>
                   <span>{r.label} <span style={{fontSize:'10px', opacity:0.5}}>{r.term}</span></span>
-                  <span style={{...s.numbers, color: r.type === 'income' ? '#34C759' : '#FF3B30'}}>${r.amount}</span>
+                  <span style={{...s.numbers, color: r.type === 'income' ? '#34C759' : '#FF3B30'}}>${r.amount.toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -142,16 +144,16 @@ export default function App() {
               <p style={s.label}>PARAMETERS</p>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
                 <span>Balance Adj.</span>
-                <input type="number" onChange={(e) => setStack(Number(e.target.value))} style={s.input} value={stack} />
+                <input type="number" onChange={(e) => setStack(Number(e.target.value))} style={{...s.inputBase, ...s.numbers, color:theme.accent, textAlign:'right', fontSize:'20px', width:'60%'}} value={stack} />
               </div>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                 <span>Target Goal</span>
-                <input type="number" onChange={(e) => setGoal(Number(e.target.value))} style={s.input} value={goal} />
+                <input type="number" onChange={(e) => setGoal(Number(e.target.value))} style={{...s.inputBase, ...s.numbers, color:theme.accent, textAlign:'right', fontSize:'20px', width:'60%'}} value={goal} />
               </div>
               {daysToGoal && (
                 <div style={{display:'flex', justifyContent:'space-between', marginTop:'20px', color:theme.accent, fontSize:'11px', fontWeight:'900', letterSpacing:'1px'}}>
                    <span>PROJECTED ETA</span>
-                   <span>{daysToGoal} DAYS</span>
+                   <span style={s.numbers}>{daysToGoal} DAYS</span>
                 </div>
               )}
             </div>
@@ -160,22 +162,16 @@ export default function App() {
                <h2 style={{...s.numbers, color: netFlow >= 0 ? '#34C759' : '#FF3B30', fontSize:'42px', margin:'15px 0'}}>${netFlow.toLocaleString()}</h2>
                <button onClick={() => setShowAudit(!showAudit)} style={{background:'#FFF', color:'#000', border:'none', padding:'10px 25px', borderRadius:'14px', fontWeight:'900', fontSize:'11px'}}>GENERATE AUDIT</button>
             </div>
-            {showAudit && (
-              <div style={{...s.card, animation: 'fadeIn 0.4s ease'}}>
-                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px'}}><span>Monthly Inflow</span><span style={{...s.numbers, color:'#34C759'}}>${monthlyIn.toFixed(2)}</span></div>
-                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}><span>Monthly Burn</span><span style={{...s.numbers, color:'#FF3B30'}}>${monthlyOut.toFixed(2)}</span></div>
-                <button onClick={() => {if(confirm("Confirm Factory Reset?")) {localStorage.clear(); window.location.reload();}}} style={{width:'100%', background:'#FF3B30', color:'#FFF', border:'none', padding:'15px', borderRadius:'18px', fontWeight:'900', fontSize:'11px'}}>FACTORY RESET</button>
-              </div>
-            )}
           </main>
         )}
 
+        {/* Milestone, Coach, and Nav remain unified... */}
         {milestoneReached && (
           <div style={{position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.98)', zIndex:5000, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px', textAlign:'center'}}>
             <div>
               <p style={{color:theme.accent, fontWeight:'900', letterSpacing:'5px', fontSize:'12px'}}>TARGET ACHIEVED</p>
               <h1 style={{...s.numbers, fontSize:'5rem', margin:'10px 0'}}>${goal.toLocaleString()}</h1>
-              <p style={{color:'#8E8E93', fontSize:'15px', margin:'20px 0 40px 0'}}>Liquidity milestone reached. Recalibrating.</p>
+              <p style={{color:'#8E8E93', fontSize:'15px', margin:'20px 0 40px 0'}}>Liquidity milestone reached.</p>
               <button onClick={() => setMilestoneReached(false)} style={{background:'#FFF', color:'#000', border:'none', padding:'20px 60px', borderRadius:'40px', fontWeight:'900', fontSize:'14px'}}>PROCEED</button>
             </div>
           </div>
@@ -184,12 +180,12 @@ export default function App() {
         {isAiOpen && (
           <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', height: '380px', background: '#000', borderTop: `1px solid ${theme.accent}`, padding: '40px', boxSizing: 'border-box', zIndex: 1000, borderRadius: '40px 40px 0 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
-              <span style={{ fontWeight: '900', fontSize: '11px', letterSpacing: '2px', color: theme.accent }}>COACH v7.2</span>
+              <span style={{ fontWeight: '900', fontSize: '11px', letterSpacing: '2px', color: theme.accent }}>COACH v7.3</span>
               <button onClick={() => setIsAiOpen(false)} style={{ background: 'none', border: 'none', color: '#FFF', fontSize: '28px' }}>×</button>
             </div>
             <div style={{ background: '#111', padding: '25px', borderRadius: '24px', color: '#FFF', fontSize: '15px', border: '1px solid #222', lineHeight: '1.6' }}>
-              Status: <b>Verified.</b><br/><br/>
-              {founderName}, initial capital seeded. Current velocity is <span style={s.numbers}>${netFlow.toFixed(2)}</span>. The architecture is ready for scale.
+              Status: <b>Unified.</b><br/><br/>
+              {founderName}, the architecture is synchronized. Your trajectory is locked at <span style={s.numbers}>${netFlow.toLocaleString()}</span>/mo.
             </div>
           </div>
         )}
