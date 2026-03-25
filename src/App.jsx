@@ -9,6 +9,7 @@ export default function App() {
   
   const founderName = "Dhruvi Desai"; 
 
+  // --- PERSISTENCE & CORE DATA ---
   const [stack, setStack] = useState(() => JSON.parse(localStorage.getItem('stack')) ?? 0);
   const [goal, setGoal] = useState(() => JSON.parse(localStorage.getItem('goal')) || 10000);
   const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('history')) || []);
@@ -21,16 +22,15 @@ export default function App() {
     localStorage.setItem('history', JSON.stringify(history));
     localStorage.setItem('recurring', JSON.stringify(recurring));
     
-    // Milestone Check
     const currentLevel = Math.floor(stack / 1000);
     if (currentLevel > maxLevel) {
         setMaxLevel(currentLevel);
-        setAiMsg(`LEVEL ${currentLevel} UNLOCKED! Dhruvi's engine is red-lining. You just leveled up your net worth.`);
+        setAiMsg(`LEVEL ${currentLevel} REACHED. Dhruvi, the stack is scaling. Milestone logged.`);
         setIsAiOpen(true);
     }
   }, [stack, goal, history, recurring, maxLevel]);
 
-  // --- ANALYTICS ENGINE ---
+  // --- RECURRING & ANALYTICS ENGINE ---
   const getMonthlyVal = (amt, term) => {
     const v = Number(amt);
     const rates = { daily: 30.42, weekly: 4.33, monthly: 1, yearly: 1/12 };
@@ -41,18 +41,19 @@ export default function App() {
   const netFlow = monthlyIn - monthlyOut;
 
   // --- COACH AI ---
-  const [aiMsg, setAiMsg] = useState(`System active. Developed by ${founderName}.`);
+  const [aiMsg, setAiMsg] = useState(`Founder ${founderName} recognized. System standing by.`);
   const [userInput, setUserInput] = useState('');
 
   const askCoach = () => {
     const input = userInput.toLowerCase();
-    if (input.includes("founder")) setAiMsg(`${founderName} built this. I'm just the Desai logic layer.`);
-    else if (input.includes("trend") || input.includes("how am i")) {
-        const last5 = history.slice(0, 5).reduce((a, b) => a + b.amount, 0);
-        setAiMsg(last5 >= 0 ? "Trend is UP. Velocity is looking clean." : "Trend is DOWN. We're leaking capital in the short term.");
-    } else {
-        setAiMsg("Data logged. We're staying on the path.");
-    }
+    if (input.includes("founder")) setAiMsg(`${founderName} is the lead architect. I am the Sterling v6.1 interface.`);
+    else if (input.includes("burn") || input.includes("expense")) setAiMsg(`Current Burn: $${monthlyOut.toFixed(2)}/mo. ${monthlyOut > monthlyIn ? "Warning: Outflow exceeds automated income." : "Outflow is covered."}`);
+    else if (input.includes("income")) setAiMsg(`Recurring Income: $${monthlyIn.toFixed(2)}/mo. This is your baseline growth.`);
+    else if (input.includes("can i afford")) {
+        const match = input.match(/\d+/);
+        const cost = match ? parseInt(match[0]) : 0;
+        setAiMsg(cost > stack * 0.1 ? "That's a significant hit to liquidity. Proceed with caution." : "Your stack can absorb that easily.");
+    } else setAiMsg("Logic synced. Ready for the next move.");
     setUserInput('');
   };
 
@@ -72,10 +73,10 @@ export default function App() {
         {activeTab === 'home' && (
             <main>
                 <section style={styles.hero}>
-                    <p style={styles.label}>LEVEL {Math.floor(stack/1000)} • STACK</p>
+                    <p style={styles.label}>LEVEL {Math.floor(stack/1000)} • TOTAL CAPITAL</p>
                     <h1 style={{...styles.bigNum, filter: isStealth ? 'blur(15px)' : 'none'}}>${stack.toLocaleString()}</h1>
                     <div style={{...styles.track, background: currentStyles.track}}>
-                        <div style={{...styles.fill, width: `${(stack/goal*100)}%`, background: '#007AFF'}}></div>
+                        <div style={{...styles.fill, width: `${Math.min((stack/goal*100), 100)}%`, background: '#007AFF'}}></div>
                     </div>
                     <button onClick={() => setIsAiOpen(true)} style={styles.aiTrigger}>✨ CONSULT COACH</button>
                 </section>
@@ -84,19 +85,19 @@ export default function App() {
                     {history.slice(0, 3).map(item => (
                         <div key={item.id} style={styles.row}>
                             <span>{item.label}</span>
-                            <span style={{color: item.amount > 0 ? '#34C759' : '#FF3B30'}}>${Math.abs(item.amount)}</span>
+                            <span style={{color: item.amount > 0 ? '#34C759' : '#FF3B30'}}>{item.amount > 0 ? '+' : ''}${Math.abs(item.amount)}</span>
                         </div>
                     ))}
                 </div>
-                <p style={styles.founderTag}>Developed by {founderName} • v6.0</p>
+                <p style={styles.founderTag}>Lead Architect: {founderName} • v6.1</p>
             </main>
         )}
 
         {activeTab === 'lab' && (
             <main>
                 <div style={{...styles.vibeCard, background: currentStyles.card}}>
-                    <p style={styles.label}>LOG MOVE</p>
-                    <input id="label" placeholder="Source" style={styles.input} />
+                    <p style={styles.label}>MANUAL LOG</p>
+                    <input id="label" placeholder="Source/Item" style={styles.input} />
                     <input id="amount" type="number" placeholder="0.00" style={styles.input} />
                     <div style={styles.grid}>
                         <button onClick={() => {
@@ -109,28 +110,62 @@ export default function App() {
                         }} style={{...styles.mainBtn, background: '#333', color: '#FFF'}}>- SPEND</button>
                     </div>
                 </div>
+                <div style={{...styles.vibeCard, background: currentStyles.card}}>
+                    <p style={styles.label}>RECURRING ENGINE (AUTO-FLOW)</p>
+                    <button onClick={() => {
+                        const l = prompt("Name?"); const a = prompt("Amount?"); const t = prompt("daily/weekly/monthly/yearly");
+                        const type = confirm("Is this INCOME?") ? 'income' : 'burn';
+                        if(l && a && t) setRecurring([...recurring, {label: l, amount: a, term: t, type, id: Date.now()}]);
+                    }} style={styles.addBtn}>+ NEW RECURRING</button>
+                    {recurring.map(r => (
+                        <div key={r.id} style={styles.row}>
+                            <span style={{color: r.type === 'income' ? '#34C759' : '#8E8E93'}}>{r.label} ({r.term})</span>
+                            <div style={{display:'flex', gap:'10px'}}>
+                                <span>${r.amount}</span>
+                                <button onClick={() => setRecurring(recurring.filter(f => f.id !== r.id))} style={styles.delBtn}>×</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </main>
         )}
 
         {activeTab === 'arena' && (
             <main>
                 <div style={{...styles.vibeCard, background: currentStyles.card}}>
-                    <p style={styles.label}>VELOCITY ANALYTICS (Last 7)</p>
+                    <p style={styles.label}>INITIAL CALIBRATION</p>
+                    <div style={styles.row}>
+                        <span>Actual Balance</span>
+                        <input type="number" placeholder={stack} onBlur={(e) => setStack(Number(e.target.value))} style={{...styles.input, width: '80px', textAlign: 'right', marginBottom: 0}} />
+                    </div>
+                    <div style={styles.row}>
+                        <span>Target Goal</span>
+                        <input type="number" placeholder={goal} onBlur={(e) => setGoal(Number(e.target.value))} style={{...styles.input, width: '80px', textAlign: 'right', marginBottom: 0}} />
+                    </div>
+                </div>
+                <div style={{...styles.vibeCard, background: currentStyles.card}}>
+                    <p style={styles.label}>VELOCITY (Last 7 Logs)</p>
                     <div style={styles.chartArea}>
                         {history.slice(0, 7).reverse().map((h, i) => (
                             <div key={i} style={{
                                 ...styles.bar, 
-                                height: `${Math.min(Math.abs(h.amount) / 10, 100)}px`, 
+                                height: `${Math.max(4, Math.min(Math.abs(h.amount) / 10, 80))}px`, 
                                 background: h.amount > 0 ? '#34C759' : '#FF3B30'
                             }}></div>
                         ))}
                     </div>
                 </div>
                 <div style={{...styles.vibeCard, background: '#000', textAlign: 'center'}}>
-                    <p style={styles.label}>MONTHLY NET</p>
-                    <h2 style={{color: netFlow >= 0 ? '#34C759' : '#FF3B30'}}>${netFlow.toFixed(2)}</h2>
-                    <button onClick={() => setShowAudit(!showAudit)} style={styles.auditBtn}>FULL AUDIT</button>
+                    <p style={styles.label}>MONTHLY NET FLOW</p>
+                    <h2 style={{color: netFlow >= 0 ? '#34C759' : '#FF3B30', fontSize: '32px'}}>${netFlow.toFixed(2)}</h2>
+                    <button onClick={() => setShowAudit(!showAudit)} style={styles.auditBtn}>DESAI AUDIT</button>
                 </div>
+                {showAudit && (
+                    <div style={{...styles.vibeCard, background: '#111', border: '1px solid #007AFF'}}>
+                        <div style={styles.row}><span>Recur. Income</span><span style={{color:'#34C759'}}>${monthlyIn.toFixed(2)}</span></div>
+                        <div style={styles.row}><span>Recur. Burn</span><span style={{color:'#FF3B30'}}>${monthlyOut.toFixed(2)}</span></div>
+                    </div>
+                )}
             </main>
         )}
 
@@ -142,7 +177,7 @@ export default function App() {
                 </div>
                 <div style={styles.aiBox}><p>{aiMsg}</p></div>
                 <div style={{display: 'flex', gap: '10px'}}>
-                    <input value={userInput} onChange={e => setUserInput(e.target.value)} onKeyDown={e => e.key==='Enter' && askCoach()} placeholder="Ask the coach..." style={styles.aiInput} />
+                    <input value={userInput} onChange={e => setUserInput(e.target.value)} onKeyDown={e => e.key==='Enter' && askCoach()} placeholder="Talk to coach..." style={styles.aiInput} />
                     <button onClick={askCoach} style={styles.sendBtn}>→</button>
                 </div>
             </div>
@@ -158,6 +193,7 @@ export default function App() {
   );
 }
 
+// --- STYLES ---
 const lightTheme = { bg: '#FFF', text: '#000', card: '#F2F2F7', border: '#E5E5EA', track: '#E5E5EA' };
 const darkTheme = { bg: '#000', text: '#FFF', card: '#1C1C1E', border: '#333', track: '#333' };
 
@@ -175,12 +211,14 @@ const styles = {
   fill: { height: '100%', transition: 'width 1s' },
   aiTrigger: { width: '100%', padding: '18px', borderRadius: '24px', border: 'none', background: '#1C1C1E', color: '#FFF', fontWeight: '800' },
   vibeCard: { padding: '20px', borderRadius: '24px', marginBottom: '15px', border: '1px solid #333' },
-  row: { display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #333', fontSize: '13px' },
+  row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #333', fontSize: '13px' },
   input: { width: '100%', background: 'transparent', border: 'none', borderBottom: '1px solid #333', padding: '10px 0', color: 'inherit', marginBottom: '15px', outline: 'none' },
   grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
   mainBtn: { border: 'none', padding: '15px', borderRadius: '15px', fontWeight: '800' },
-  chartArea: { display: 'flex', alignItems: 'flex-end', gap: '8px', height: '100px', marginTop: '20px', padding: '0 10px' },
-  bar: { flex: 1, borderRadius: '4px', minHeight: '4px', transition: '0.5s' },
+  addBtn: { width: '100%', background: 'none', border: '1px dashed #333', color: '#8E8E93', padding: '10px', borderRadius: '15px', marginBottom: '15px' },
+  delBtn: { background: '#333', border: 'none', color: '#FFF', width: '20px', height: '20px', borderRadius: '50%', fontSize: '12px' },
+  chartArea: { display: 'flex', alignItems: 'flex-end', gap: '8px', height: '80px', marginTop: '15px' },
+  bar: { flex: 1, borderRadius: '3px' },
   founderTag: { textAlign: 'center', fontSize: '9px', color: '#8E8E93', marginTop: '20px', fontWeight: '700' },
   aiDrawer: { position: 'fixed', bottom: 0, left: 0, width: '100%', height: '350px', background: '#000', borderTop: '2px solid #007AFF', padding: '30px', borderTopLeftRadius: '30px', borderTopRightRadius: '30px', display: 'flex', flexDirection: 'column', zIndex: 2000 },
   aiBox: { background: '#1C1C1E', padding: '20px', borderRadius: '20px', margin: '20px 0', color: '#FFF' },
