@@ -1,98 +1,88 @@
 import React, { useState, useEffect } from 'react';
 
 export default function App() {
-  // --- PERSISTENCE LOGIC (The "Memory") ---
-  const [current, setCurrent] = useState(() => {
-    const saved = localStorage.getItem('stacked_current');
-    return saved !== null ? JSON.parse(saved) : 50000;
-  });
-
-  const [goal, setGoal] = useState(() => {
-    const saved = localStorage.getItem('stacked_goal');
-    return saved !== null ? JSON.parse(saved) : 1000000;
-  });
-
-  const [monthlyBurn, setMonthlyBurn] = useState(() => {
-    const saved = localStorage.getItem('stacked_burn');
-    return saved !== null ? JSON.parse(saved) : 2000;
-  });
+  const [stack, setStack] = useState(() => JSON.parse(localStorage.getItem('stack')) || 5000);
+  const [goal, setGoal] = useState(() => JSON.parse(localStorage.getItem('goal')) || 10000);
+  const [sending, setSending] = useState(300); // Future Wealth
+  const [burning, setBurning] = useState(200); // Lifestyle
 
   useEffect(() => {
-    localStorage.setItem('stacked_current', JSON.stringify(current));
-    localStorage.setItem('stacked_goal', JSON.stringify(goal));
-    localStorage.setItem('stacked_burn', JSON.stringify(monthlyBurn));
-  }, [current, goal, monthlyBurn]);
+    localStorage.setItem('stack', JSON.stringify(stack));
+    localStorage.setItem('goal', JSON.stringify(goal));
+  }, [stack, goal]);
 
-  // --- MATH ENGINE ---
-  const alignment = ((current / goal) * 100).toFixed(1);
-  const runway = monthlyBurn > 0 ? (current / monthlyBurn).toFixed(0) : "∞";
-
-  // --- SHARE FUNCTION (The "Flex") ---
-  const handleShare = () => {
-    const text = `My North Star Alignment is ${alignment}% on Stacked AI. Get on my level.`;
-    alert("Share Card Generated: " + text + "\n\n(In production, this would trigger the Instagram Share API)");
-  };
+  const progress = ((stack / goal) * 100).toFixed(1);
+  const level = Math.floor(progress / 10);
+  const vibeRatio = ((sending / (sending + burning)) * 100).toFixed(0);
+  const isClutch = vibeRatio >= 50;
 
   return (
-    <div style={styles.app}>
-      {/* Navigation */}
-      <div style={styles.nav}>
-        <div style={styles.logo}>STACKED <span style={{color: '#FFD700'}}>AI</span></div>
-        <button onClick={handleShare} style={styles.shareBtn}>SHARE ALIGNMENT</button>
-      </div>
+    <div style={styles.container}>
+      <main style={styles.main}>
+        <header style={styles.header}>
+          <div style={styles.logo}>STACKED</div>
+          <div style={{...styles.status, background: isClutch ? '#000' : '#F2F2F7', color: isClutch ? '#FFF' : '#000'}}>
+            {isClutch ? 'VERIFIED CLUTCH' : 'IMPROVING'}
+          </div>
+        </header>
 
-      {/* Gamified Mission */}
-      <div style={styles.questContainer}>
-        <div style={styles.quest}>
-          <span style={styles.questHighlight}>DAILY MISSION:</span> MOVE $50 TO YOUR STACK
+        <section style={styles.hero}>
+          <p style={styles.label}>LEVEL {level} PROGRESS</p>
+          <h1 style={styles.bigNum}>{progress}%</h1>
+          <div style={styles.track}><div style={{...styles.fill, width: `${progress}%`}}></div></div>
+        </section>
+
+        <div style={styles.vibeCard}>
+          <div style={styles.vibeHeader}>
+            <span style={styles.vibeLabel}>VIBE CHECK</span>
+            <span style={{fontWeight: '900', color: isClutch ? '#34C759' : '#FF3B30'}}>{isClutch ? 'W FLOW' : 'L RATIO'}</span>
+          </div>
+          <div style={styles.grid}>
+            <div style={styles.tile}>
+              <label style={styles.tileLabel}>SENDING (INVEST)</label>
+              <input type="number" value={sending} onChange={(e) => setSending(Number(e.target.value))} style={styles.input} />
+            </div>
+            <div style={styles.tile}>
+              <label style={styles.tileLabel}>BURNING (SPEND)</label>
+              <input type="number" value={burning} onChange={(e) => setBurning(Number(e.target.value))} style={styles.input} />
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Main Alignment Display */}
-      <main style={styles.hero}>
-        <h2 style={styles.subhead}>NORTH STAR ALIGNMENT</h2>
-        <div style={styles.mainDisplay}>{alignment}%</div>
-        <div style={styles.runwayText}>FINANCIAL RUNWAY: <span style={{color: '#fff'}}>{runway} MONTHS</span></div>
+        <section style={styles.footer}>
+          <div style={styles.field}>
+            <label style={styles.tileLabel}>TOTAL LIQUID STACK ($)</label>
+            <input type="number" value={stack} onChange={(e) => setStack(Number(e.target.value))} style={styles.massiveInput} />
+          </div>
+          <div style={styles.field}>
+            <label style={styles.tileLabel}>NORTH STAR GOAL ($)</label>
+            <input type="number" value={goal} onChange={(e) => setGoal(Number(e.target.value))} style={styles.massiveInput} />
+          </div>
+        </section>
       </main>
-
-      {/* Input Grid */}
-      <div style={styles.controlGrid}>
-        <div style={styles.card}>
-          <label style={styles.cardLabel}>TOTAL LIQUIDITY (THE STACK)</label>
-          <input type="number" value={current} onChange={(e) => setCurrent(Number(e.target.value))} style={styles.cardInput} />
-        </div>
-        <div style={styles.card}>
-          <label style={styles.cardLabel}>MONTHLY SPEND (THE BURN)</label>
-          <input type="number" value={monthlyBurn} onChange={(e) => setMonthlyBurn(Number(e.target.value))} style={styles.cardInput} />
-        </div>
-        <div style={styles.card}>
-          <label style={styles.cardLabel}>GOAL (THE NORTH STAR)</label>
-          <input type="number" value={goal} onChange={(e) => setGoal(Number(e.target.value))} style={styles.cardInput} />
-        </div>
-      </div>
-
-      <footer style={styles.footer}>
-        DESIGNED BY DHRUVI DESAI | PROTOTYPE V1.0.4
-      </footer>
     </div>
   );
 }
 
 const styles = {
-  app: { backgroundColor: '#050505', color: '#fff', minHeight: '100vh', padding: '40px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', boxSizing: 'border-box' },
-  nav: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' },
-  logo: { fontSize: '1.2rem', fontWeight: '900', letterSpacing: '-1px' },
-  shareBtn: { background: '#FFD700', color: '#000', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' },
-  questContainer: { display: 'flex', justifyContent: 'center', marginBottom: '30px' },
-  quest: { background: '#111', padding: '12px 24px', borderRadius: '100px', fontSize: '11px', border: '1px solid #222', color: '#888' },
-  questHighlight: { color: '#FFD700', fontWeight: 'bold', marginRight: '8px' },
-  hero: { textAlign: 'center', padding: '80px 0', borderTop: '1px solid #111', borderBottom: '1px solid #111', marginBottom: '50px' },
-  subhead: { fontSize: '11px', color: '#444', letterSpacing: '4px', marginBottom: '15px', fontWeight: '800' },
-  mainDisplay: { fontSize: 'min(20vw, 12rem)', fontWeight: '900', margin: '0', lineHeight: '0.8', letterSpacing: '-8px' },
-  runwayText: { marginTop: '30px', color: '#555', fontSize: '12px', letterSpacing: '2px', fontWeight: 'bold' },
-  controlGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px', maxWidth: '1000px', margin: '0 auto' },
-  card: { background: '#0F0F0F', padding: '24px', borderRadius: '16px', border: '1px solid #181818' },
-  cardLabel: { display: 'block', fontSize: '9px', color: '#444', marginBottom: '10px', letterSpacing: '1px', fontWeight: 'bold' },
-  cardInput: { background: 'none', border: 'none', color: '#fff', fontSize: '1.8rem', fontWeight: 'bold', outline: 'none', width: '100%' },
-  footer: { marginTop: '60px', textAlign: 'center', fontSize: '9px', color: '#222', letterSpacing: '2px' }
+  container: { background: '#FFFFFF', minHeight: '100vh', fontFamily: '-apple-system, sans-serif', color: '#000', padding: '0 24px' },
+  main: { maxWidth: '400px', margin: '0 auto', paddingTop: '60px' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '80px' },
+  logo: { fontWeight: '900', fontSize: '13px', letterSpacing: '2px' },
+  status: { fontSize: '9px', fontWeight: '800', padding: '6px 12px', borderRadius: '30px' },
+  hero: { textAlign: 'center', marginBottom: '50px' },
+  label: { fontSize: '10px', fontWeight: '700', color: '#AEAEB2', letterSpacing: '1px', marginBottom: '10px' },
+  bigNum: { fontSize: '7rem', fontWeight: '900', letterSpacing: '-6px', lineHeight: '0.8', margin: 0 },
+  track: { width: '100%', height: '8px', background: '#F2F2F7', borderRadius: '10px', marginTop: '30px', overflow: 'hidden' },
+  fill: { height: '100%', background: '#000', transition: 'width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)' },
+  vibeCard: { background: '#F9F9FB', padding: '24px', borderRadius: '32px', border: '1px solid #F2F2F7', marginBottom: '20px' },
+  vibeHeader: { display: 'flex', justifyContent: 'space-between', marginBottom: '15px' },
+  vibeLabel: { fontSize: '9px', fontWeight: '900', color: '#8E8E93' },
+  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
+  tile: { background: '#FFF', padding: '12px', borderRadius: '16px', border: '1px solid #F2F2F7' },
+  tileLabel: { fontSize: '8px', fontWeight: '800', color: '#AEAEB2', marginBottom: '4px', display: 'block' },
+  input: { border: 'none', background: 'none', fontSize: '1.2rem', fontWeight: '700', outline: 'none', width: '100%' },
+  footer: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
+  field: { background: '#000', color: '#FFF', padding: '20px', borderRadius: '24px' },
+  massiveInput: { border: 'none', background: 'none', fontSize: '1.4rem', fontWeight: '800', outline: 'none', color: '#FFF', width: '100%' }
 };
