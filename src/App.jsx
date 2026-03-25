@@ -40,7 +40,9 @@ export default function App() {
   const monthlyOut = recurring.filter(r => r.type === 'burn').reduce((acc, r) => acc + getMonthlyVal(r.amount, r.term), 0);
   const netFlow = monthlyIn - monthlyOut;
 
-  // --- CLEAR INPUT LOGIC ---
+  // Projection Logic
+  const daysToGoal = netFlow > 0 ? Math.ceil(((goal - stack) / (netFlow / 30.42))) : null;
+
   const handleLog = (type) => {
     const labelEl = document.getElementById('l-label');
     const amtEl = document.getElementById('l-amt');
@@ -51,12 +53,25 @@ export default function App() {
       const finalAmt = type === 'income' ? amount : -amount;
       setHistory([{ label, amount: finalAmt, id: Date.now() }, ...history]);
       setStack(s => s + finalAmt);
-      
-      // THE FIX: Reset inputs immediately
       labelEl.value = '';
       amtEl.value = '';
       labelEl.blur();
       amtEl.blur();
+    }
+  };
+
+  // RECURRING LOGIC FIX: Distinct Options
+  const addRecurringFlow = () => {
+    const l = prompt("Label (e.g. Rental, Salary)?");
+    const a = prompt("Amount?");
+    const t = prompt("Frequency: daily, weekly, monthly, or yearly?");
+    const typeChoice = prompt("Type: Enter '1' for INCOME or '2' for BURN");
+    
+    if (l && a && t && (typeChoice === '1' || typeChoice === '2')) {
+      const type = typeChoice === '1' ? 'income' : 'burn';
+      setRecurring([{ label: l, amount: Number(a), term: t.toLowerCase(), type, id: Date.now() }, ...recurring]);
+    } else {
+      alert("Invalid entry. Flow discarded.");
     }
   };
 
@@ -98,7 +113,7 @@ export default function App() {
             </div>
             
             <div style={s.card}>
-               <p style={s.label}>LEDGER</p>
+               <p style={s.label}>RECENT ACTIVITY</p>
                {history.slice(0, 3).map(h => (
                  <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', borderBottom: `1px solid ${theme.border}` }}>
                    <span style={{fontSize: '15px', fontWeight: '500'}}>{h.label}</span>
@@ -123,11 +138,7 @@ export default function App() {
 
             <div style={s.card}>
               <p style={s.label}>AUTO-FLOWS</p>
-              <button onClick={() => {
-                const l = prompt("Flow Label?"); const a = prompt("Amount?"); const t = prompt("daily/weekly/monthly/yearly?");
-                const type = confirm("Income?") ? 'income' : 'burn';
-                if(l && a && t) setRecurring([{label: l, amount: Number(a), term: t, type, id: Date.now()}, ...recurring]);
-              }} style={{width:'100%', padding:'15px', background:'none', border:`1px dashed ${theme.border}`, color:'#8E8E93', borderRadius:'20px', fontSize:'12px', fontWeight:'700'}}>+ ATTACH FLOW</button>
+              <button onClick={addRecurringFlow} style={{width:'100%', padding:'15px', background:'none', border:`1px dashed ${theme.border}`, color:'#8E8E93', borderRadius:'20px', fontSize:'12px', fontWeight:'700'}}>+ ATTACH NEW FLOW</button>
               {recurring.map(r => (
                 <div key={r.id} style={{display:'flex', justifyContent:'space-between', padding:'15px 0', borderBottom:`1px solid ${theme.border}`, fontSize:'14px'}}>
                   <span>{r.label} <span style={{fontSize:'10px', opacity:0.5}}>{r.term}</span></span>
@@ -146,10 +157,12 @@ export default function App() {
                 <span>Target Liquidity</span>
                 <input type="number" onBlur={(e) => setGoal(Number(e.target.value))} style={{...s.numbers, background:'none', border:'none', color:theme.accent, textAlign:'right', fontSize:'20px'}} placeholder={goal} />
               </div>
-              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                <span>Manual Adj.</span>
-                <input type="number" onBlur={(e) => setStack(Number(e.target.value))} style={{...s.numbers, background:'none', border:'none', color:theme.accent, textAlign:'right', fontSize:'20px'}} placeholder={stack} />
-              </div>
+              {daysToGoal && (
+                <div style={{display:'flex', justifyContent:'space-between', marginTop:'15px', color:theme.accent, fontSize:'12px', fontWeight:'800'}}>
+                   <span>ETA TO GOAL</span>
+                   <span>{daysToGoal} DAYS</span>
+                </div>
+              )}
             </div>
 
             <div style={{...s.card, textAlign:'center', background:'#000', border:`1px solid ${theme.accent}55`}}>
@@ -183,12 +196,12 @@ export default function App() {
         {isAiOpen && (
           <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', height: '380px', background: '#000', borderTop: `1px solid ${theme.accent}`, padding: '40px', boxSizing: 'border-box', zIndex: 1000, borderRadius: '40px 40px 0 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
-              <span style={{ fontWeight: '900', fontSize: '11px', letterSpacing: '2px', color: theme.accent }}>COACH v7.0</span>
+              <span style={{ fontWeight: '900', fontSize: '11px', letterSpacing: '2px', color: theme.accent }}>COACH v7.1</span>
               <button onClick={() => setIsAiOpen(false)} style={{ background: 'none', border: 'none', color: '#FFF', fontSize: '28px' }}>×</button>
             </div>
             <div style={{ background: '#111', padding: '25px', borderRadius: '24px', color: '#FFF', fontSize: '15px', border: '1px solid #222', lineHeight: '1.6' }}>
-              Wealth Status: <b>Optimal.</b><br/><br/>
-              {founderName}, the capital is scaling. Your monthly velocity of <span style={s.numbers}>${netFlow.toFixed(2)}</span> is a strong baseline. Stop looking at the numbers and start looking at the leverage.
+              Status: <b>Liquid.</b><br/><br/>
+              {founderName}, at your current velocity, the target is inevitable. Consistency is the only variable left.
             </div>
           </div>
         )}
