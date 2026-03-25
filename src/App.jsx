@@ -25,21 +25,15 @@ export default function App() {
     const currentLevel = Math.floor(stack / 1000);
     if (currentLevel > maxLevel) {
         setMaxLevel(currentLevel);
-        setAiMsg(`Level ${currentLevel} unlocked. The stack is scaling according to plan.`);
+        setAiMsg(`Level ${currentLevel} reached. The stack is scaling.`);
         setIsAiOpen(true);
     }
   }, [stack, goal, history, recurring, maxLevel]);
 
-  // --- MASTER RESET ---
   const resetSystem = () => {
-    if (window.confirm("WARNING: This will wipe all history, recurring flows, and your current stack. Proceed?")) {
+    if (window.confirm("Wipe all data?")) {
         localStorage.clear();
-        setStack(0);
-        setGoal(10000);
-        setHistory([]);
-        setRecurring([]);
-        setMaxLevel(0);
-        setAiMsg("System purged. Starting fresh ledger.");
+        window.location.reload();
     }
   };
 
@@ -53,178 +47,107 @@ export default function App() {
   const monthlyOut = recurring.filter(r => r.type === 'burn').reduce((acc, curr) => acc + getMonthlyVal(curr.amount, curr.term), 0);
   const netFlow = monthlyIn - monthlyOut;
 
-  // --- COACH AI ---
-  const [aiMsg, setAiMsg] = useState(`Stacked AI v6.3 Online. Developed by ${founderName}.`);
+  const [aiMsg, setAiMsg] = useState(`Stacked AI Online. Founder: ${founderName}`);
   const [userInput, setUserInput] = useState('');
 
   const askCoach = () => {
     const input = userInput.toLowerCase();
-    if (input.includes("founder")) setAiMsg(`${founderName} built this. I'm the Desai logic layer.`);
-    else if (input.includes("burn")) setAiMsg(`Monthly Burn: $${monthlyOut.toFixed(2)}.`);
-    else if (input.includes("income")) setAiMsg(`Monthly Income: $${monthlyIn.toFixed(2)}.`);
-    else setAiMsg("Ledger synced.");
+    if (input.includes("founder")) setAiMsg(`${founderName} is the lead architect.`);
+    else if (input.includes("burn")) setAiMsg(`Burn rate: $${monthlyOut.toFixed(2)}/mo.`);
+    else setAiMsg("Logic synced.");
     setUserInput('');
   };
 
-  const currentStyles = isDarkMode ? darkTheme : lightTheme;
+  const currentStyles = isDarkMode ? { bg: '#000', text: '#FFF', card: '#1C1C1E' } : { bg: '#FFF', text: '#000', card: '#F2F2F7' };
 
   return (
-    <div style={{...styles.container, background: currentStyles.bg, color: currentStyles.text}}>
-      <div style={styles.page}>
-        <header style={styles.header}>
-            <div style={styles.logo}>STACKED <span style={styles.aiBadge}>AI</span></div>
-            <div style={{display: 'flex', gap: '8px'}}>
-                <button onClick={() => setIsStealth(!isStealth)} style={{...styles.themeBtn, background: isStealth ? '#FF3B30' : '#333'}}>STEALTH</button>
-                <button onClick={() => setIsDarkMode(!isDarkMode)} style={styles.themeBtn}>{isDarkMode ? 'SNOW' : 'MIDNIGHT'}</button>
-            </div>
+    <div style={{minHeight: '100vh', background: currentStyles.bg, color: currentStyles.text, fontFamily: 'sans-serif', padding: '20px', paddingBottom: '100px'}}>
+      <div style={{maxWidth: '400px', margin: '0 auto'}}>
+        <header style={{display: 'flex', justifyContent: 'space-between', marginBottom: '30px'}}>
+            <div style={{fontWeight: '900', fontSize: '14px', letterSpacing: '2px'}}>STACKED AI</div>
+            <button onClick={() => setIsStealth(!isStealth)} style={{background: isStealth ? '#FF3B30' : '#333', color: '#FFF', border: 'none', padding: '8px 12px', borderRadius: '10px', fontSize: '10px', fontWeight: '800'}}>STEALTH</button>
         </header>
 
         {activeTab === 'home' && (
             <main>
-                <section style={styles.hero}>
-                    <p style={styles.label}>LEVEL {Math.floor(stack/1000)} • TOTAL STACK</p>
-                    <h1 style={{...styles.bigNum, filter: isStealth ? 'blur(15px)' : 'none'}}>${stack.toLocaleString()}</h1>
-                    <div style={{...styles.track, background: currentStyles.track}}>
-                        <div style={{...styles.fill, width: `${Math.min((stack/goal*100), 100)}%`, background: '#007AFF'}}></div>
-                    </div>
-                    <button onClick={() => setIsAiOpen(true)} style={styles.aiTrigger}>✨ CONSULT COACH</button>
-                </section>
-                <div style={{...styles.vibeCard, background: currentStyles.card}}>
-                    <p style={styles.label}>RECENT ACTIVITY</p>
+                <div style={{textAlign: 'center', marginBottom: '40px'}}>
+                    <p style={{fontSize: '10px', color: '#8E8E93', fontWeight: '800'}}>TOTAL CAPITAL</p>
+                    <h1 style={{fontSize: '4.5rem', fontWeight: '900', margin: '10px 0', filter: isStealth ? 'blur(15px)' : 'none'}}>${stack.toLocaleString()}</h1>
+                    <button onClick={() => setIsAiOpen(true)} style={{width: '100%', padding: '15px', borderRadius: '20px', background: '#007AFF', color: '#FFF', border: 'none', fontWeight: '800'}}>CONSULT COACH</button>
+                </div>
+                <div style={{background: currentStyles.card, padding: '20px', borderRadius: '20px'}}>
+                    <p style={{fontSize: '10px', color: '#8E8E93', fontWeight: '800'}}>RECENT</p>
                     {history.slice(0, 3).map(item => (
-                        <div key={item.id} style={styles.row}>
+                        <div key={item.id} style={{display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #333'}}>
                             <span>{item.label}</span>
                             <span style={{color: item.amount > 0 ? '#34C759' : '#FF3B30'}}>{item.amount > 0 ? '+' : ''}${Math.abs(item.amount)}</span>
                         </div>
                     ))}
                 </div>
-                <p style={styles.founderTag}>Developed by {founderName} • v6.3</p>
             </main>
         )}
 
         {activeTab === 'lab' && (
             <main>
-                <div style={{...styles.vibeCard, background: currentStyles.card}}>
-                    <p style={styles.label}>LOG TRANSACTION</p>
-                    <input id="label" placeholder="Source" style={styles.input} />
-                    <input id="amount" type="number" placeholder="0.00" style={styles.input} />
-                    <div style={styles.grid}>
+                <div style={{background: currentStyles.card, padding: '20px', borderRadius: '20px', marginBottom: '20px'}}>
+                    <input id="label" placeholder="Source" style={{width: '100%', background: 'none', border: 'none', borderBottom: '1px solid #333', color: 'inherit', padding: '10px 0', marginBottom: '15px'}} />
+                    <input id="amount" type="number" placeholder="0.00" style={{width: '100%', background: 'none', border: 'none', borderBottom: '1px solid #333', color: 'inherit', padding: '10px 0', marginBottom: '15px'}} />
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
                         <button onClick={() => {
                             const l = document.getElementById('label').value; const a = document.getElementById('amount').value;
                             if(l && a) { setHistory([{label: l, amount: Number(a), id: Date.now()}, ...history]); setStack(s => s + Number(a)); }
-                        }} style={{...styles.mainBtn, background: '#FFF', color: '#000'}}>INCOME</button>
+                        }} style={{padding: '15px', borderRadius: '12px', border: 'none', fontWeight: '800', background: '#FFF', color: '#000'}}>+ INCOME</button>
                         <button onClick={() => {
                             const l = document.getElementById('label').value; const a = document.getElementById('amount').value;
                             if(l && a) { setHistory([{label: l, amount: -Math.abs(Number(a)), id: Date.now()}, ...history]); setStack(s => s - Math.abs(Number(a))); }
-                        }} style={{...styles.mainBtn, background: '#333', color: '#FFF'}}>SPEND</button>
+                        }} style={{padding: '15px', borderRadius: '12px', border: 'none', fontWeight: '800', background: '#333', color: '#FFF'}}>- SPEND</button>
                     </div>
                 </div>
-                <div style={{...styles.vibeCard, background: currentStyles.card}}>
-                    <p style={styles.label}>AUTO-FLOWS</p>
+                <div style={{background: currentStyles.card, padding: '20px', borderRadius: '20px'}}>
                     <button onClick={() => {
                         const l = prompt("Name?"); const a = prompt("Amount?"); const t = prompt("daily/weekly/monthly/yearly");
                         const type = confirm("Income?") ? 'income' : 'burn';
                         if(l && a && t) setRecurring([...recurring, {label: l, amount: a, term: t, type, id: Date.now()}]);
-                    }} style={styles.addBtn}>+ NEW RECURRING</button>
-                    {recurring.map(r => (
-                        <div key={r.id} style={styles.row}>
-                            <span style={{color: r.type === 'income' ? '#34C759' : '#8E8E93'}}>{r.label}</span>
-                            <button onClick={() => setRecurring(recurring.filter(f => f.id !== r.id))} style={styles.delBtn}>×</button>
-                        </div>
-                    ))}
+                    }} style={{width: '100%', padding: '10px', background: 'none', border: '1px dashed #555', color: '#8E8E93', borderRadius: '10px'}}>+ ADD RECURRING</button>
                 </div>
             </main>
         )}
 
         {activeTab === 'arena' && (
             <main>
-                <div style={{...styles.vibeCard, background: currentStyles.card}}>
-                    <p style={styles.label}>INITIAL CALIBRATION</p>
-                    <div style={styles.row}><span>Actual Balance</span><input type="number" onBlur={(e) => setStack(Number(e.target.value))} style={styles.miniInput} /></div>
-                    <div style={styles.row}><span>Target Goal</span><input type="number" onBlur={(e) => setGoal(Number(e.target.value))} style={styles.miniInput} /></div>
-                </div>
-                <div style={{...styles.vibeCard, background: currentStyles.card}}>
-                    <p style={styles.label}>VELOCITY CHART</p>
-                    <div style={styles.chartArea}>
-                        {history.slice(0, 7).reverse().map((h, i) => (
-                            <div key={i} style={{...styles.bar, height: `${Math.max(4, Math.min(Math.abs(h.amount) / 10, 80))}px`, background: h.amount > 0 ? '#34C759' : '#FF3B30'}}></div>
-                        ))}
+                <div style={{background: currentStyles.card, padding: '20px', borderRadius: '20px', marginBottom: '20px'}}>
+                    <p style={{fontSize: '10px', color: '#8E8E93', fontWeight: '800'}}>CALIBRATION</p>
+                    <div style={{display: 'flex', justifyContent: 'space-between', padding: '10px 0'}}>
+                        <span>Actual Balance</span>
+                        <input type="number" onBlur={(e) => setStack(Number(e.target.value))} style={{background: 'none', border: 'none', color: '#007AFF', textAlign: 'right', fontWeight: '700'}} placeholder={stack} />
                     </div>
                 </div>
-                <div style={{...styles.vibeCard, background: '#000', textAlign: 'center'}}>
-                    <p style={styles.label}>NET MONTHLY FLOW</p>
+                <div style={{background: '#000', border: '1px solid #333', padding: '20px', borderRadius: '20px', textAlign: 'center'}}>
+                    <p style={{fontSize: '10px', color: '#8E8E93'}}>MONTHLY FLOW</p>
                     <h2 style={{color: netFlow >= 0 ? '#34C759' : '#FF3B30', fontSize: '32px'}}>${netFlow.toFixed(2)}</h2>
-                    <button onClick={() => setShowAudit(!showAudit)} style={styles.auditBtn}>SYSTEM AUDIT</button>
+                    <button onClick={() => setShowAudit(!showAudit)} style={{background: '#FFF', border: 'none', padding: '8px 15px', borderRadius: '10px', fontWeight: '900', fontSize: '10px'}}>SYSTEM AUDIT</button>
+                    {showAudit && <button onClick={resetSystem} style={{display: 'block', width: '100%', marginTop: '20px', background: '#FF3B30', color: '#FFF', border: 'none', padding: '10px', borderRadius: '10px', fontWeight: '800'}}>RESET ALL</button>}
                 </div>
-                {showAudit && (
-                    <div style={{...styles.vibeCard, background: '#111', border: '1px solid #333'}}>
-                        <div style={styles.row}><span>Recur. Income</span><span style={{color:'#34C759'}}>${monthlyIn.toFixed(2)}</span></div>
-                        <div style={styles.row}><span>Recur. Burn</span><span style={{color:'#FF3B30'}}>${monthlyOut.toFixed(2)}</span></div>
-                        <button onClick={resetSystem} style={styles.resetBtn}>RESET ALL DATA</button>
-                    </div>
-                )}
             </main>
         )}
 
         {isAiOpen && (
-            <div style={styles.aiDrawer}>
-                <div style={styles.flexBetween}>
-                    <span style={{fontWeight: '900', fontSize: '10px'}}>COACH ENGINE</span>
-                    <button onClick={() => setIsAiOpen(false)} style={styles.closeBtn}>×</button>
+            <div style={{position: 'fixed', bottom: 0, left: 0, width: '100%', height: '350px', background: '#000', borderTop: '2px solid #007AFF', padding: '30px', boxSizing: 'border-box', zIndex: 100}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', color: '#FFF'}}>
+                    <span style={{fontWeight: '900', fontSize: '10px'}}>COACH</span>
+                    <button onClick={() => setIsAiOpen(false)} style={{background: 'none', border: 'none', color: '#FFF', fontSize: '20px'}}>×</button>
                 </div>
-                <div style={styles.aiBox}><p>{aiMsg}</p></div>
-                <div style={{display: 'flex', gap: '10px'}}>
-                    <input value={userInput} onChange={e => setUserInput(e.target.value)} onKeyDown={e => e.key==='Enter' && askCoach()} placeholder="Ask coach..." style={styles.aiInput} />
-                    <button onClick={askCoach} style={styles.sendBtn}>→</button>
-                </div>
+                <div style={{background: '#1C1C1E', padding: '20px', borderRadius: '20px', margin: '20px 0', color: '#FFF'}}>{aiMsg}</div>
+                <input value={userInput} onChange={e => setUserInput(e.target.value)} onKeyDown={e => e.key==='Enter' && askCoach()} placeholder="Ask..." style={{width: '100%', background: '#333', border: 'none', padding: '15px', borderRadius: '10px', color: '#FFF'}} />
             </div>
         )}
-      </div>
 
-      <nav style={styles.nav}>
-        <button onClick={() => setActiveTab('home')} style={{...styles.navBtn, opacity: activeTab==='home'?1:0.3}}>Home</button>
-        <button onClick={() => setActiveTab('lab')} style={{...styles.navBtn, opacity: activeTab==='lab'?1:0.3}}>Lab</button>
-        <button onClick={() => setActiveTab('arena')} style={{...styles.navBtn, opacity: activeTab==='arena'?1:0.3}}>Arena</button>
-      </nav>
+        <nav style={{position: 'fixed', bottom: '30px', left: '50%', transform: 'translateX(-50%)', width: '260px', background: 'rgba(0,0,0,0.9)', borderRadius: '40px', display: 'flex', justifyContent: 'space-around', padding: '15px'}}>
+            {['home', 'lab', 'arena'].map(t => (
+                <button key={t} onClick={() => setActiveTab(t)} style={{background: 'none', border: 'none', color: '#FFF', fontWeight: '700', opacity: activeTab === t ? 1 : 0.3}}>{t.toUpperCase()}</button>
+            ))}
+        </nav>
+      </div>
     </div>
   );
 }
-
-const darkTheme = { bg: '#000', text: '#FFF', card: '#1C1C1E', border: '#333', track: '#333' };
-const lightTheme = { bg: '#FFF', text: '#000', card: '#F2F2F7', border: '#E5E5EA', track: '#E5E5EA' };
-
-const styles = {
-  container: { minHeight: '100vh', fontFamily: '-apple-system, sans-serif', padding: '0 24px', transition: '0.3s', paddingBottom: '100px' },
-  page: { maxWidth: '400px', margin: '0 auto', paddingTop: '40px' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' },
-  logo: { fontWeight: '900', fontSize: '12px', letterSpacing: '2px' },
-  aiBadge: { background: '#007AFF', color: '#FFF', padding: '2px 6px', borderRadius: '4px', fontSize: '8px' },
-  themeBtn: { color: '#FFF', border: 'none', padding: '8px 12px', borderRadius: '12px', fontSize: '9px', fontWeight: '800', cursor: 'pointer' },
-  hero: { textAlign: 'center', marginBottom: '30px' },
-  bigNum: { fontSize: '4.5rem', fontWeight: '900', letterSpacing: '-4px', margin: '10px 0' },
-  label: { fontSize: '10px', fontWeight: '800', color: '#8E8E93', letterSpacing: '1px' },
-  track: { width: '100%', height: '10px', borderRadius: '10px', overflow: 'hidden', margin: '20px 0' },
-  fill: { height: '100%', transition: 'width 1s' },
-  aiTrigger: { width: '100%', padding: '18px', borderRadius: '24px', border: 'none', background: '#1C1C1E', color: '#FFF', fontWeight: '800' },
-  vibeCard: { padding: '20px', borderRadius: '24px', marginBottom: '15px', border: '1px solid #333' },
-  row: { display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #333', fontSize: '13px', alignItems: 'center' },
-  input: { width: '100%', background: 'transparent', border: 'none', borderBottom: '1px solid #333', padding: '10px 0', color: 'inherit', marginBottom: '15px', outline: 'none' },
-  miniInput: { width: '80px', background: 'transparent', border: 'none', color: '#007AFF', textAlign: 'right', fontWeight: '700' },
-  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
-  mainBtn: { border: 'none', padding: '15px', borderRadius: '15px', fontWeight: '800' },
-  addBtn: { width: '100%', background: 'none', border: '1px dashed #333', color: '#8E8E93', padding: '10px', borderRadius: '15px', marginBottom: '15px' },
-  delBtn: { background: '#333', border: 'none', color: '#FFF', width: '20px', height: '20px', borderRadius: '50%', fontSize: '12px' },
-  chartArea: { display: 'flex', alignItems: 'flex-end', gap: '8px', height: '80px', marginTop: '15px' },
-  bar: { flex: 1, borderRadius: '3px' },
-  founderTag: { textAlign: 'center', fontSize: '9px', color: '#8E8E93', marginTop: '20px', fontWeight: '700' },
-  aiDrawer: { position: 'fixed', bottom: 0, left: 0, width: '100%', height: '350px', background: '#000', borderTop: '2px solid #007AFF', padding: '30px', borderTopLeftRadius: '30px', borderTopRightRadius: '30px', display: 'flex', flexDirection: 'column', zIndex: 2000 },
-  aiBox: { background: '#1C1C1E', padding: '20px', borderRadius: '20px', margin: '20px 0', color: '#FFF' },
-  aiInput: { flex: 1, background: '#333', border: 'none', padding: '15px', borderRadius: '15px', color: '#FFF' },
-  sendBtn: { background: '#007AFF', border: 'none', color: '#FFF', padding: '0 20px', borderRadius: '15px' },
-  closeBtn: { background: 'none', border: 'none', color: '#FFF', fontSize: '24px' },
-  flexBetween: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  nav: { position: 'fixed', bottom: '30px', left: '50%', transform: 'translateX(-50%)', width: '260px', background: 'rgba(0,0,0,0.9)', borderRadius: '40px', display: 'flex', justifyContent: 'space-around', padding: '16px' },
-  navBtn: { background: 'none', border: 'none', color: '#FFF', fontWeight: '700', fontSize: '12px' },
-  auditBtn: { background: '#FFF', color: '#000', border: 'none', padding: '8px 15px', borderRadius: '10px', fontSize: '10px', fontWeight: '900', marginTop: '10px' },
-  resetBtn: { width: '100%', background: '#FF3B30', color: '#FFF', border: 'none', padding: '12px', borderRadius: '12px', fontSize: '10px', fontWeight: '900', marginTop: '20px', cursor: 'pointer' }
-};
