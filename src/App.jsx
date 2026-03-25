@@ -7,8 +7,8 @@ export default function App() {
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
   
-  // --- USER CONFIG (Change 'FOUNDER' to your actual name) ---
-  const founderName = "FOUNDER"; 
+  // --- FOUNDER IDENTITY ---
+  const founderName = "Dhruvi Desai"; 
 
   const [stack, setStack] = useState(() => JSON.parse(localStorage.getItem('stack')) ?? 0);
   const [goal, setGoal] = useState(() => JSON.parse(localStorage.getItem('goal')) || 10000);
@@ -22,7 +22,7 @@ export default function App() {
     localStorage.setItem('recurring', JSON.stringify(recurring));
   }, [stack, goal, history, recurring]);
 
-  // --- MATH ENGINE ---
+  // --- ENGINE ---
   const getMonthlyVal = (amt, term) => {
     const v = Number(amt);
     const rates = { daily: 30.42, weekly: 4.33, monthly: 1, yearly: 1/12 };
@@ -34,19 +34,19 @@ export default function App() {
   const netFlow = monthlyIn - monthlyOut;
 
   // --- COACH LOGIC ---
-  const [aiMsg, setAiMsg] = useState(`System active. Developed by ${founderName}. How can I help?`);
+  const [aiMsg, setAiMsg] = useState(`System active. Developed by ${founderName}. What's the play?`);
   const [userInput, setUserInput] = useState('');
 
   const askCoach = () => {
     const input = userInput.toLowerCase();
-    if (input.includes("founder") || input.includes("who made")) {
-      setAiMsg(`${founderName} is the lead architect of Stacked AI. I'm just the interface running on their logic.`);
+    if (input.includes("founder") || input.includes("who made") || input.includes("dhruvi")) {
+      setAiMsg(`${founderName} is the founder and lead developer. I'm running on the Desai Logic Engine.`);
     } else if (input.includes("expense") || input.includes("burn")) {
-      setAiMsg(`Recurring Burn: $${monthlyOut.toFixed(2)}/mo. You're ${monthlyOut > monthlyIn ? 'bleeding' : 'stable'}.`);
+      setAiMsg(`Recurring Burn: $${monthlyOut.toFixed(2)}/mo. You're ${monthlyOut > monthlyIn ? 'bleeding capital' : 'stable'}.`);
     } else if (input.includes("income")) {
-      setAiMsg(`Recurring Income: $${monthlyIn.toFixed(2)}/mo. That's your automated baseline.`);
+      setAiMsg(`Automated Income: $${monthlyIn.toFixed(2)}/mo. That's your floor.`);
     } else {
-      setAiMsg("Math confirmed. Keep stacking.");
+      setAiMsg("Ledger confirmed. Stay focused on the goal.");
     }
     setUserInput('');
   };
@@ -83,7 +83,7 @@ export default function App() {
                         </div>
                     ))}
                 </div>
-                <p style={styles.founderTag}>Developed by {founderName} • v5.4</p>
+                <p style={styles.founderTag}>Developed by {founderName} • v5.5</p>
             </main>
         )}
 
@@ -122,7 +122,7 @@ export default function App() {
                     ))}
                     <button onClick={() => {
                         const l = prompt("Name?"); const a = prompt("Amount?"); const t = prompt("daily/weekly/monthly/yearly");
-                        const type = confirm("Income?") ? 'income' : 'burn';
+                        const type = confirm("Is this INCOME?") ? 'income' : 'burn';
                         if(l && a && t) setRecurring([...recurring, {label: l, amount: a, term: t, type, id: Date.now()}]);
                     }} style={styles.addBtn}>+ NEW RECURRING</button>
                 </div>
@@ -142,7 +142,6 @@ export default function App() {
                         <div style={styles.row}><span>Lead Developer</span><span>{founderName}</span></div>
                         <div style={styles.row}><span>Recur. Income</span><span>${monthlyIn.toFixed(2)}</span></div>
                         <div style={styles.row}><span>Recur. Burn</span><span>${monthlyOut.toFixed(2)}</span></div>
-                        <p style={{fontSize: '10px', color: '#8E8E93', marginTop: '10px'}}>Verification complete. Logic is synced with the {founderName} Master Ledger.</p>
                     </div>
                 )}
             </main>
@@ -196,7 +195,7 @@ const styles = {
   addBtn: { width: '100%', background: 'none', border: '1px dashed #333', color: '#8E8E93', padding: '10px', borderRadius: '15px', marginBottom: '15px' },
   delBtn: { background: '#333', border: 'none', color: '#FFF', width: '20px', height: '20px', borderRadius: '50%', fontSize: '12px' },
   founderTag: { textAlign: 'center', fontSize: '9px', color: '#8E8E93', marginTop: '20px', fontWeight: '700', letterSpacing: '1px' },
-  aiDrawer: { position: 'fixed', bottom: 0, left: 0, width: '100%', height: '350px', background: '#000', borderTop: '2px solid #007AFF', padding: '30px', borderTopLeftRadius: '30px', borderTopRightRadius: '30px', display: 'flex', flexDirection: 'column', z_index: 2000 },
+  aiDrawer: { position: 'fixed', bottom: 0, left: 0, width: '100%', height: '350px', background: '#000', borderTop: '2px solid #007AFF', padding: '30px', borderTopLeftRadius: '30px', borderTopRightRadius: '30px', display: 'flex', flexDirection: 'column', zIndex: 2000 },
   aiBox: { background: '#1C1C1E', padding: '20px', borderRadius: '20px', margin: '20px 0', color: '#FFF' },
   aiInput: { flex: 1, background: '#333', border: 'none', padding: '15px', borderRadius: '15px', color: '#FFF' },
   sendBtn: { background: '#007AFF', border: 'none', color: '#FFF', padding: '0 20px', borderRadius: '15px' },
