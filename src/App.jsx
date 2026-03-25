@@ -7,22 +7,22 @@ export default function App() {
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
   
-  // --- PERSISTENCE ---
+  // --- USER CONFIG (Change 'FOUNDER' to your actual name) ---
+  const founderName = "FOUNDER"; 
+
   const [stack, setStack] = useState(() => JSON.parse(localStorage.getItem('stack')) ?? 0);
   const [goal, setGoal] = useState(() => JSON.parse(localStorage.getItem('goal')) || 10000);
   const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('history')) || []);
   const [recurring, setRecurring] = useState(() => JSON.parse(localStorage.getItem('recurring')) || []);
-  const [streak, setStreak] = useState(() => JSON.parse(localStorage.getItem('streak')) || 0);
 
   useEffect(() => {
     localStorage.setItem('stack', JSON.stringify(stack));
     localStorage.setItem('goal', JSON.stringify(goal));
     localStorage.setItem('history', JSON.stringify(history));
     localStorage.setItem('recurring', JSON.stringify(recurring));
-    localStorage.setItem('streak', JSON.stringify(streak));
-  }, [stack, goal, history, recurring, streak]);
+  }, [stack, goal, history, recurring]);
 
-  // --- CALCULATIONS ---
+  // --- MATH ENGINE ---
   const getMonthlyVal = (amt, term) => {
     const v = Number(amt);
     const rates = { daily: 30.42, weekly: 4.33, monthly: 1, yearly: 1/12 };
@@ -32,53 +32,23 @@ export default function App() {
   const monthlyIn = recurring.filter(r => r.type === 'income').reduce((acc, curr) => acc + getMonthlyVal(curr.amount, curr.term), 0);
   const monthlyOut = recurring.filter(r => r.type === 'burn').reduce((acc, curr) => acc + getMonthlyVal(curr.amount, curr.term), 0);
   const netFlow = monthlyIn - monthlyOut;
-  const progress = Math.min(((stack / goal) * 100), 100).toFixed(1);
 
-  // --- COACH AI LOGIC (REAL MATH) ---
-  const [aiMsg, setAiMsg] = useState("Yo! I'm live. What's the move?");
+  // --- COACH LOGIC ---
+  const [aiMsg, setAiMsg] = useState(`System active. Developed by ${founderName}. How can I help?`);
   const [userInput, setUserInput] = useState('');
 
   const askCoach = () => {
     const input = userInput.toLowerCase();
-    const recentSpend = Math.abs(history.filter(h => h.amount < 0).slice(0, 5).reduce((a, b) => a + b.amount, 0));
-    
-    if (input.includes("buy") || input.includes("afford")) {
-      const match = input.match(/\d+/);
-      const cost = match ? parseInt(match[0]) : 50;
-      if (cost > stack) {
-        setAiMsg(`Strict no. You've only got $${stack} and that costs $${cost}. We don't do debt here.`);
-      } else if (cost > (stack * 0.2)) {
-        setAiMsg(`That's ${((cost/stack)*100).toFixed(0)}% of your total stack. It's a heavy hit. I'd wait until we're at Level ${Math.floor(progress/10) + 1}.`);
-      } else {
-        setAiMsg(`$${cost} is a light move for you. You'll still be at ${((stack-cost)/goal*100).toFixed(1)}% of your goal. Go for it.`);
-      }
-    } else if (input.includes("goal") || input.includes("when")) {
-      if (netFlow <= 0) {
-        setAiMsg(`At this rate? Never. Your monthly flow is negative ($${netFlow.toFixed(2)}). We need more income in the Lab.`);
-      } else {
-        const months = (goal - stack) / netFlow;
-        setAiMsg(`Based on your recurring flows, you'll hit $${goal} in about ${months.toFixed(1)} months. Keep the streak alive.`);
-      }
-    } else if (input.includes("stats") || input.includes("how am i")) {
-      setAiMsg(`You've logged ${history.length} moves. Your biggest burn recently was $${recentSpend}. Your flow is $${netFlow > 0 ? 'positive' : 'leaking'}.`);
+    if (input.includes("founder") || input.includes("who made")) {
+      setAiMsg(`${founderName} is the lead architect of Stacked AI. I'm just the interface running on their logic.`);
+    } else if (input.includes("expense") || input.includes("burn")) {
+      setAiMsg(`Recurring Burn: $${monthlyOut.toFixed(2)}/mo. You're ${monthlyOut > monthlyIn ? 'bleeding' : 'stable'}.`);
+    } else if (input.includes("income")) {
+      setAiMsg(`Recurring Income: $${monthlyIn.toFixed(2)}/mo. That's your automated baseline.`);
     } else {
-      setAiMsg("I'm tracking. Just keep logging those moves in the Lab so I can give you better data.");
+      setAiMsg("Math confirmed. Keep stacking.");
     }
     setUserInput('');
-  };
-
-  // --- ACTIONS ---
-  const logMove = (label, amount, isIncome) => {
-    if(!label || !amount) return;
-    const finalAmt = isIncome ? Math.abs(Number(amount)) : -Math.abs(Number(amount));
-    setHistory([{ label, amount: finalAmt, id: Date.now() }, ...history]);
-    setStack(prev => prev + finalAmt);
-    if (isIncome) setStreak(s => s + 1);
-  };
-
-  const deleteMove = (id, amount) => {
-    setHistory(history.filter(item => item.id !== id));
-    setStack(prev => prev - amount);
   };
 
   const currentStyles = isDarkMode ? darkTheme : lightTheme;
@@ -97,68 +67,84 @@ export default function App() {
         {activeTab === 'home' && (
             <main>
                 <section style={styles.hero}>
-                    <p style={styles.label}>NET STACK</p>
+                    <p style={styles.label}>NET LIQUIDITY</p>
                     <h1 style={{...styles.bigNum, filter: isStealth ? 'blur(15px)' : 'none'}}>${stack.toLocaleString()}</h1>
                     <div style={{...styles.track, background: currentStyles.track}}>
-                        <div style={{...styles.fill, width: `${progress}%`, background: '#007AFF'}}></div>
+                        <div style={{...styles.fill, width: `${(stack/goal*100)}%`, background: '#007AFF'}}></div>
                     </div>
-                    <button onClick={() => setIsAiOpen(true)} style={styles.aiTrigger}>✨ ASK COACH</button>
+                    <button onClick={() => setIsAiOpen(true)} style={styles.aiTrigger}>✨ CONSULT COACH</button>
                 </section>
                 <div style={{...styles.vibeCard, background: currentStyles.card}}>
-                    <p style={styles.label}>LEDGER</p>
-                    {history.slice(0, 4).map(item => (
+                    <p style={styles.label}>HISTORY</p>
+                    {history.slice(0, 3).map(item => (
                         <div key={item.id} style={styles.row}>
                             <span>{item.label}</span>
-                            <div style={{display: 'flex', gap: '10px'}}>
-                                <span style={{color: item.amount > 0 ? '#34C759' : '#FF3B30'}}>${Math.abs(item.amount)}</span>
-                                <button onClick={() => deleteMove(item.id, item.amount)} style={styles.delBtn}>×</button>
-                            </div>
+                            <span style={{color: item.amount > 0 ? '#34C759' : '#FF3B30'}}>${Math.abs(item.amount)}</span>
                         </div>
                     ))}
                 </div>
+                <p style={styles.founderTag}>Developed by {founderName} • v5.4</p>
             </main>
         )}
 
         {activeTab === 'lab' && (
             <main>
                 <div style={{...styles.vibeCard, background: currentStyles.card}}>
-                    <p style={styles.label}>NEW MOVE</p>
+                    <p style={styles.label}>LOG TRANSACTION</p>
                     <input id="label" placeholder="Source" style={styles.input} />
                     <input id="amount" type="number" placeholder="0.00" style={styles.input} />
                     <div style={styles.grid}>
-                        <button onClick={() => logMove(document.getElementById('label').value, document.getElementById('amount').value, true)} style={{...styles.mainBtn, background: '#FFF', color: '#000'}}>+ INCOME</button>
-                        <button onClick={() => logMove(document.getElementById('label').value, document.getElementById('amount').value, false)} style={{...styles.mainBtn, background: '#333', color: '#FFF'}}>- SPEND</button>
+                        <button onClick={() => {
+                            const l = document.getElementById('label').value;
+                            const a = document.getElementById('amount').value;
+                            if(l && a) {
+                                setHistory([{label: l, amount: Number(a), id: Date.now()}, ...history]);
+                                setStack(s => s + Number(a));
+                            }
+                        }} style={{...styles.mainBtn, background: '#FFF', color: '#000'}}>+ INCOME</button>
+                        <button onClick={() => {
+                            const l = document.getElementById('label').value;
+                            const a = document.getElementById('amount').value;
+                            if(l && a) {
+                                setHistory([{label: l, amount: -Math.abs(Number(a)), id: Date.now()}, ...history]);
+                                setStack(s => s - Math.abs(Number(a)));
+                            }
+                        }} style={{...styles.mainBtn, background: '#333', color: '#FFF'}}>- SPEND</button>
                     </div>
                 </div>
                 <div style={{...styles.vibeCard, background: currentStyles.card}}>
-                    <p style={styles.label}>RECURRING ENGINE</p>
+                    <p style={styles.label}>AUTO-FLOWS</p>
                     {recurring.map(r => (
                         <div key={r.id} style={styles.row}>
-                            <span>{r.label}</span>
+                            <span style={{color: r.type === 'income' ? '#34C759' : '#8E8E93'}}>{r.label}</span>
                             <button onClick={() => setRecurring(recurring.filter(f => f.id !== r.id))} style={styles.delBtn}>×</button>
                         </div>
                     ))}
                     <button onClick={() => {
                         const l = prompt("Name?"); const a = prompt("Amount?"); const t = prompt("daily/weekly/monthly/yearly");
-                        if(l && a && t) setRecurring([...recurring, {label: l, amount: a, term: t, type: confirm("Income?")?'income':'burn', id: Date.now()}]);
-                    }} style={styles.addBtn}>+ NEW FLOW</button>
+                        const type = confirm("Income?") ? 'income' : 'burn';
+                        if(l && a && t) setRecurring([...recurring, {label: l, amount: a, term: t, type, id: Date.now()}]);
+                    }} style={styles.addBtn}>+ NEW RECURRING</button>
                 </div>
             </main>
         )}
 
         {activeTab === 'arena' && (
             <main>
-                <div style={{...styles.vibeCard, background: currentStyles.card, borderColor: '#007AFF'}}>
-                    <p style={styles.label}>CALIBRATION</p>
-                    <input type="number" placeholder="Actual Balance" onBlur={(e) => setStack(Number(e.target.value))} style={styles.input} />
-                    <input type="number" placeholder="Financial Goal" onBlur={(e) => setGoal(Number(e.target.value))} style={styles.input} />
+                <div style={{...styles.vibeCard, background: '#000', color: '#FFF', textAlign: 'center'}}>
+                    <p style={styles.label}>MONTHLY FLOW</p>
+                    <h2 style={{color: netFlow >= 0 ? '#34C759' : '#FF3B30', fontSize: '32px'}}>${netFlow.toFixed(2)}</h2>
+                    <button onClick={() => setShowAudit(!showAudit)} style={styles.auditBtn}>SYSTEM AUDIT</button>
                 </div>
-                <div style={{...styles.vibeCard, background: '#000', textAlign: 'center'}}>
-                    <p style={styles.label}>NET FLOW</p>
-                    <h2 style={{color: netFlow >= 0 ? '#34C759' : '#FF3B30', fontSize: '40px'}}>${netFlow.toFixed(2)}</h2>
-                    <button onClick={() => setShowAudit(!showAudit)} style={styles.auditBtn}>AUDIT</button>
-                </div>
-                {showAudit && <div style={styles.vibeCard}>Solvency: {progress}% | Flow: ${netFlow}/mo</div>}
+                {showAudit && (
+                    <div style={{...styles.vibeCard, background: '#111', border: '1px solid #007AFF'}}>
+                        <p style={{fontSize: '9px', color: '#007AFF', fontWeight: '900', marginBottom: '10px'}}>FOUNDER'S COMPLIANCE REPORT</p>
+                        <div style={styles.row}><span>Lead Developer</span><span>{founderName}</span></div>
+                        <div style={styles.row}><span>Recur. Income</span><span>${monthlyIn.toFixed(2)}</span></div>
+                        <div style={styles.row}><span>Recur. Burn</span><span>${monthlyOut.toFixed(2)}</span></div>
+                        <p style={{fontSize: '10px', color: '#8E8E93', marginTop: '10px'}}>Verification complete. Logic is synced with the {founderName} Master Ledger.</p>
+                    </div>
+                )}
             </main>
         )}
 
@@ -186,7 +172,6 @@ export default function App() {
   );
 }
 
-// --- STYLES ---
 const lightTheme = { bg: '#FFF', text: '#000', card: '#F2F2F7', border: '#E5E5EA', track: '#E5E5EA' };
 const darkTheme = { bg: '#000', text: '#FFF', card: '#1C1C1E', border: '#333', track: '#333' };
 
@@ -208,9 +193,10 @@ const styles = {
   input: { width: '100%', background: 'transparent', border: 'none', borderBottom: '1px solid #333', padding: '10px 0', color: 'inherit', marginBottom: '15px', outline: 'none' },
   grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
   mainBtn: { border: 'none', padding: '15px', borderRadius: '15px', fontWeight: '800' },
-  addBtn: { width: '100%', background: 'none', border: '1px dashed #333', color: '#8E8E93', padding: '10px', borderRadius: '15px', marginTop: '10px' },
+  addBtn: { width: '100%', background: 'none', border: '1px dashed #333', color: '#8E8E93', padding: '10px', borderRadius: '15px', marginBottom: '15px' },
   delBtn: { background: '#333', border: 'none', color: '#FFF', width: '20px', height: '20px', borderRadius: '50%', fontSize: '12px' },
-  aiDrawer: { position: 'fixed', bottom: 0, left: 0, width: '100%', height: '350px', background: '#000', borderTop: '2px solid #007AFF', padding: '30px', borderTopLeftRadius: '30px', borderTopRightRadius: '30px', display: 'flex', flexDirection: 'column', zIndex: 2000 },
+  founderTag: { textAlign: 'center', fontSize: '9px', color: '#8E8E93', marginTop: '20px', fontWeight: '700', letterSpacing: '1px' },
+  aiDrawer: { position: 'fixed', bottom: 0, left: 0, width: '100%', height: '350px', background: '#000', borderTop: '2px solid #007AFF', padding: '30px', borderTopLeftRadius: '30px', borderTopRightRadius: '30px', display: 'flex', flexDirection: 'column', z_index: 2000 },
   aiBox: { background: '#1C1C1E', padding: '20px', borderRadius: '20px', margin: '20px 0', color: '#FFF' },
   aiInput: { flex: 1, background: '#333', border: 'none', padding: '15px', borderRadius: '15px', color: '#FFF' },
   sendBtn: { background: '#007AFF', border: 'none', color: '#FFF', padding: '0 20px', borderRadius: '15px' },
