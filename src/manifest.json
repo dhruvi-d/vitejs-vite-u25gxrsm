@@ -1,0 +1,16 @@
+{
+    "name": "Stacked AI",
+    "short_name": "Stacked",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "icons": [
+      {
+        "src": "logo192.png",
+        "type": "image/png",
+        "sizes": "192x192"
+      }
+    ]
+  }
+  

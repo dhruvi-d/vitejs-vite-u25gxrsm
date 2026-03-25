@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
+// --- LEGAL OVERLAYS ---
+const TOS_TEXT = "Stacked AI is a beta simulation tool. Data is stored locally on your device. We do not guarantee accuracy or financial outcomes. Use at your own risk.";
+const PRIVACY_TEXT = "Privacy: Your financial data never leaves this device. We use browser localStorage to keep your 'Stack' persistent. No data is transmitted to our servers in this version.";
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -38,14 +42,9 @@ export default function App() {
 
   const monthlyIn = recurring.filter(r => r.type === 'income').reduce((acc, r) => acc + getMonthlyVal(r.amount, r.term), 0);
   const monthlyOut = recurring.filter(r => r.type === 'burn').reduce((acc, r) => acc + getMonthlyVal(r.amount, r.term), 0);
-  
   const netFlow = monthlyIn - monthlyOut;
   const gap = goal - stack;
-  
-  // ETA Logic: Only visible if you are moving TOWARD the goal
-  const daysToGoal = (netFlow > 0 && gap > 0) 
-    ? Math.ceil((gap / (netFlow / 30.42))) 
-    : null;
+  const daysToGoal = (netFlow > 0 && gap > 0) ? Math.ceil((gap / (netFlow / 30.42))) : null;
 
   const handleLog = (type) => {
     const labelEl = document.getElementById('l-label');
@@ -155,8 +154,6 @@ export default function App() {
                 <span style={{fontSize:'14px'}}>Target Goal</span>
                 <input type="number" onChange={(e) => setGoal(Number(e.target.value))} style={{...s.inputBase, ...s.numbers, color:theme.accent, textAlign:'right', fontSize:'20px', width:'60%'}} value={goal} />
               </div>
-              
-              {/* THE ETA COMPONENT */}
               {daysToGoal && (
                 <div style={{display:'flex', justifyContent:'space-between', marginTop:'25px', paddingTop:'15px', borderTop:`1px solid ${theme.border}`, color:theme.accent, fontSize:'11px', fontWeight:'900', letterSpacing:'1px'}}>
                    <span>PROJECTED ETA</span>
@@ -173,9 +170,15 @@ export default function App() {
 
             {showAudit && (
               <div style={{...s.card, animation: 'fadeIn 0.4s ease'}}>
-                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px'}}><span>Monthly Inflow</span><span style={s.numbers}>${monthlyIn.toLocaleString()}</span></div>
-                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}><span>Monthly Burn</span><span style={s.numbers}>${monthlyOut.toLocaleString()}</span></div>
-                <button onClick={() => {if(confirm("Confirm Factory Reset?")) {localStorage.clear(); window.location.reload();}}} style={{width:'100%', background:'#FF3B30', color:'#FFF', border:'none', padding:'15px', borderRadius:'18px', fontWeight:'900', fontSize:'11px'}}>FACTORY RESET</button>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px'}}><span>Inflow</span><span style={s.numbers}>${monthlyIn.toLocaleString()}</span></div>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}><span>Burn</span><span style={s.numbers}>${monthlyOut.toLocaleString()}</span></div>
+                
+                <div style={{display:'flex', gap:'15px', marginBottom:'20px', justifyContent:'center'}}>
+                  <button onClick={() => alert(TOS_TEXT)} style={{background:'none', border:'none', color:'#8E8E93', fontSize:'10px', fontWeight:'700'}}>TERMS</button>
+                  <button onClick={() => alert(PRIVACY_TEXT)} style={{background:'none', border:'none', color:'#8E8E93', fontSize:'10px', fontWeight:'700'}}>PRIVACY</button>
+                </div>
+
+                <button onClick={() => {if(confirm("Factory Reset?")) {localStorage.clear(); window.location.reload();}}} style={{width:'100%', background:'#FF3B30', color:'#FFF', border:'none', padding:'15px', borderRadius:'18px', fontWeight:'900', fontSize:'11px'}}>FACTORY RESET</button>
               </div>
             )}
           </main>
@@ -184,12 +187,12 @@ export default function App() {
         {isAiOpen && (
           <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', height: '380px', background: '#000', borderTop: `1px solid ${theme.accent}`, padding: '40px', boxSizing: 'border-box', zIndex: 1000, borderRadius: '40px 40px 0 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
-              <span style={{ fontWeight: '900', fontSize: '11px', letterSpacing: '2px', color: theme.accent }}>COACH v7.4</span>
+              <span style={{ fontWeight: '900', fontSize: '11px', letterSpacing: '2px', color: theme.accent }}>COACH v7.5</span>
               <button onClick={() => setIsAiOpen(false)} style={{ background: 'none', border: 'none', color: '#FFF', fontSize: '28px' }}>×</button>
             </div>
             <div style={{ background: '#111', padding: '25px', borderRadius: '24px', color: '#FFF', fontSize: '15px', border: '1px solid #222', lineHeight: '1.6' }}>
-              Wealth Status: <b>Synchronized.</b><br/><br/>
-              {founderName}, the data is clean. Your trajectory is measurable. Velocity is <span style={s.numbers}>${netFlow.toLocaleString()}</span>. {daysToGoal ? `Goal realization in ${daysToGoal} days.` : "Adjust flow to generate an ETA."}
+              Status: <b>Beta Verified.</b><br/><br/>
+              Trajectory is measurable. Velocity is <span style={s.numbers}>${netFlow.toLocaleString()}</span>. {daysToGoal ? `Goal realization in ${daysToGoal} days.` : "Adjust flow for ETA."}
             </div>
           </div>
         )}
