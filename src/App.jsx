@@ -29,7 +29,7 @@ export default function App() {
     }
   }, [stack, goal, history, recurring, milestoneReached]);
 
-  // --- RECURRING LOGIC ---
+  // --- CALCULATIONS ---
   const getMonthlyVal = (amt, term) => {
     const v = Number(amt);
     const rates = { daily: 30.42, weekly: 4.33, monthly: 1, yearly: 1/12 };
@@ -38,8 +38,14 @@ export default function App() {
 
   const monthlyIn = recurring.filter(r => r.type === 'income').reduce((acc, r) => acc + getMonthlyVal(r.amount, r.term), 0);
   const monthlyOut = recurring.filter(r => r.type === 'burn').reduce((acc, r) => acc + getMonthlyVal(r.amount, r.term), 0);
+  
   const netFlow = monthlyIn - monthlyOut;
-  const daysToGoal = netFlow > 0 && goal > stack ? Math.ceil(((goal - stack) / (netFlow / 30.42))) : null;
+  const gap = goal - stack;
+  
+  // ETA Logic: Only visible if you are moving TOWARD the goal
+  const daysToGoal = (netFlow > 0 && gap > 0) 
+    ? Math.ceil((gap / (netFlow / 30.42))) 
+    : null;
 
   const handleLog = (type) => {
     const labelEl = document.getElementById('l-label');
@@ -54,7 +60,7 @@ export default function App() {
   };
 
   const addRecurringFlow = () => {
-    const l = prompt("Label?");
+    const l = prompt("Label (e.g. Salary, Rent)?");
     const a = prompt("Amount?");
     const t = prompt("Frequency (daily, weekly, monthly, yearly)?");
     const typeChoice = prompt("Type: '1' for Income, '2' for Burn");
@@ -70,7 +76,6 @@ export default function App() {
 
   const s = {
     container: { minHeight: '100vh', background: theme.bg, color: theme.text, fontFamily: 'Inter, -apple-system, sans-serif', padding: '24px', transition: '0.4s', WebkitFontSmoothing: 'antialiased' },
-    // UNIFIED NUMBER STYLE
     numbers: { fontVariantNumeric: 'tabular-nums', letterSpacing: '-1px', fontWeight: '800', fontFamily: 'Inter, sans-serif' },
     label: { fontSize: '11px', color: '#8E8E93', fontWeight: '600', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' },
     card: { background: theme.card, padding: '24px', borderRadius: '32px', marginBottom: '16px', border: `1px solid ${theme.border}` },
@@ -141,51 +146,50 @@ export default function App() {
         {activeTab === 'arena' && (
           <main>
             <div style={s.card}>
-              <p style={s.label}>PARAMETERS</p>
+              <p style={s.label}>ARENA PARAMETERS</p>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
-                <span>Balance Adj.</span>
+                <span style={{fontSize:'14px'}}>Balance Adj.</span>
                 <input type="number" onChange={(e) => setStack(Number(e.target.value))} style={{...s.inputBase, ...s.numbers, color:theme.accent, textAlign:'right', fontSize:'20px', width:'60%'}} value={stack} />
               </div>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                <span>Target Goal</span>
+                <span style={{fontSize:'14px'}}>Target Goal</span>
                 <input type="number" onChange={(e) => setGoal(Number(e.target.value))} style={{...s.inputBase, ...s.numbers, color:theme.accent, textAlign:'right', fontSize:'20px', width:'60%'}} value={goal} />
               </div>
+              
+              {/* THE ETA COMPONENT */}
               {daysToGoal && (
-                <div style={{display:'flex', justifyContent:'space-between', marginTop:'20px', color:theme.accent, fontSize:'11px', fontWeight:'900', letterSpacing:'1px'}}>
+                <div style={{display:'flex', justifyContent:'space-between', marginTop:'25px', paddingTop:'15px', borderTop:`1px solid ${theme.border}`, color:theme.accent, fontSize:'11px', fontWeight:'900', letterSpacing:'1px'}}>
                    <span>PROJECTED ETA</span>
-                   <span style={s.numbers}>{daysToGoal} DAYS</span>
+                   <span style={s.numbers}>{daysToGoal.toLocaleString()} DAYS</span>
                 </div>
               )}
             </div>
-            <div style={{...s.card, textAlign:'center', background:'#000', border:`1px solid ${theme.accent}55`}}>
+
+            <div style={{...s.card, textAlign:'center', background:'#000', border:`1px solid ${theme.accent}55` }}>
                <p style={s.label}>MONTHLY VELOCITY</p>
                <h2 style={{...s.numbers, color: netFlow >= 0 ? '#34C759' : '#FF3B30', fontSize:'42px', margin:'15px 0'}}>${netFlow.toLocaleString()}</h2>
                <button onClick={() => setShowAudit(!showAudit)} style={{background:'#FFF', color:'#000', border:'none', padding:'10px 25px', borderRadius:'14px', fontWeight:'900', fontSize:'11px'}}>GENERATE AUDIT</button>
             </div>
-          </main>
-        )}
 
-        {/* Milestone, Coach, and Nav remain unified... */}
-        {milestoneReached && (
-          <div style={{position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.98)', zIndex:5000, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px', textAlign:'center'}}>
-            <div>
-              <p style={{color:theme.accent, fontWeight:'900', letterSpacing:'5px', fontSize:'12px'}}>TARGET ACHIEVED</p>
-              <h1 style={{...s.numbers, fontSize:'5rem', margin:'10px 0'}}>${goal.toLocaleString()}</h1>
-              <p style={{color:'#8E8E93', fontSize:'15px', margin:'20px 0 40px 0'}}>Liquidity milestone reached.</p>
-              <button onClick={() => setMilestoneReached(false)} style={{background:'#FFF', color:'#000', border:'none', padding:'20px 60px', borderRadius:'40px', fontWeight:'900', fontSize:'14px'}}>PROCEED</button>
-            </div>
-          </div>
+            {showAudit && (
+              <div style={{...s.card, animation: 'fadeIn 0.4s ease'}}>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px'}}><span>Monthly Inflow</span><span style={s.numbers}>${monthlyIn.toLocaleString()}</span></div>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}><span>Monthly Burn</span><span style={s.numbers}>${monthlyOut.toLocaleString()}</span></div>
+                <button onClick={() => {if(confirm("Confirm Factory Reset?")) {localStorage.clear(); window.location.reload();}}} style={{width:'100%', background:'#FF3B30', color:'#FFF', border:'none', padding:'15px', borderRadius:'18px', fontWeight:'900', fontSize:'11px'}}>FACTORY RESET</button>
+              </div>
+            )}
+          </main>
         )}
 
         {isAiOpen && (
           <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', height: '380px', background: '#000', borderTop: `1px solid ${theme.accent}`, padding: '40px', boxSizing: 'border-box', zIndex: 1000, borderRadius: '40px 40px 0 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
-              <span style={{ fontWeight: '900', fontSize: '11px', letterSpacing: '2px', color: theme.accent }}>COACH v7.3</span>
+              <span style={{ fontWeight: '900', fontSize: '11px', letterSpacing: '2px', color: theme.accent }}>COACH v7.4</span>
               <button onClick={() => setIsAiOpen(false)} style={{ background: 'none', border: 'none', color: '#FFF', fontSize: '28px' }}>×</button>
             </div>
             <div style={{ background: '#111', padding: '25px', borderRadius: '24px', color: '#FFF', fontSize: '15px', border: '1px solid #222', lineHeight: '1.6' }}>
-              Status: <b>Unified.</b><br/><br/>
-              {founderName}, the architecture is synchronized. Your trajectory is locked at <span style={s.numbers}>${netFlow.toLocaleString()}</span>/mo.
+              Wealth Status: <b>Synchronized.</b><br/><br/>
+              {founderName}, the data is clean. Your trajectory is measurable. Velocity is <span style={s.numbers}>${netFlow.toLocaleString()}</span>. {daysToGoal ? `Goal realization in ${daysToGoal} days.` : "Adjust flow to generate an ETA."}
             </div>
           </div>
         )}
