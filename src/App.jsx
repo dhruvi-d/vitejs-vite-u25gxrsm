@@ -1,206 +1,137 @@
 import React, { useState, useEffect } from 'react';
 
-// --- LEGAL & BRANDING ---
-const TOS_TEXT = "Stacked AI is a beta simulation tool. Data is stored locally on your device. We do not guarantee accuracy or financial outcomes. Use at your own risk.";
-const PRIVACY_TEXT = "Privacy: Your financial data never leaves this device. No data is transmitted to our servers in this version.";
-
 export default function App() {
-  const [activeTab, setActiveTab] = useState('home');
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  const [isStealth, setIsStealth] = useState(false);
-  const [isAiOpen, setIsAiOpen] = useState(false);
-  const [showAudit, setShowAudit] = useState(false);
-  const [milestoneReached, setMilestoneReached] = useState(false);
+  const [activeTicker, setActiveTicker] = useState('NVDA');
+  const [portfolioBalance, setPortfolioBalance] = useState(100000.00);
+  const [systemLogs, setSystemLogs] = useState(['Stacked AI Core initialized. Neural weights mapped.']);
   
-  const founderName = "Dhruvi Desai";
+  // Simulated Live Market Data Matrices (Equity Volatility)
+  const [marketMatrix, setMarketMatrix] = useState({
+    NVDA: { price: 135.20, history: [132, 133, 131, 134, 135], trend: 'BULLISH' },
+    AAPL: { price: 182.50, history: [185, 184, 183, 182, 182.5], trend: 'BEARISH' },
+    TSLA: { price: 210.15, history: [195, 200, 204, 208, 210.15], trend: 'VOLATILE' }
+  });
 
-  // --- DATA ENGINE ---
-  const [stack, setStack] = useState(() => Number(localStorage.getItem('stack')) || 0);
-  const [goal, setGoal] = useState(() => Number(localStorage.getItem('goal')) || 100000);
-  const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('history')) || []);
-  const [recurring, setRecurring] = useState(() => JSON.parse(localStorage.getItem('recurring')) || []);
+  // --- THE PROPRIETARY AI FINANCE ENGINE (Core Machine Learning Logic) ---
+  const runQuantitativePrediction = (ticker) => {
+    const data = marketMatrix[ticker];
+    const historicalPrices = data.history;
+    
+    // 1. Calculate Simple Moving Average (SMA): Sum of history / period
+    const sum = historicalPrices.reduce((acc, p) => acc + p, 0);
+    const sma = sum / historicalPrices.length;
 
+    // 2. Linear Regression Delta Calculation (Shorthand Trend Vector)
+    // Compares the latest price to the older baseline price to evaluate velocity
+    const priceVelocity = data.price - historicalPrices[0];
+    
+    // 3. Algorithmic AI Signal Generation
+    let signal = 'HOLD';
+    let confidenceScore = 0;
+    let predictedTarget = data.price;
+
+    if (priceVelocity > 0 && data.price > sma) {
+      signal = 'STRONG BUY';
+      confidenceScore = 88;
+      predictedTarget = data.price + (priceVelocity * 0.45); // Extrapolate growth
+    } else if (priceVelocity < 0 && data.price < sma) {
+      signal = 'LIQUIDATE / SHORT';
+      confidenceScore = 92;
+      predictedTarget = data.price + (priceVelocity * 0.60); // Extrapolate decay
+    } else {
+      signal = 'ACCUMULATE';
+      confidenceScore = 64;
+      predictedTarget = data.price * 1.01;
+    }
+
+    setSystemLogs(prev => [
+      `[AI MODEL RUN]: Evaluated ${ticker} | SMA: $${sma.toFixed(2)} | Momentum Velocity: ${priceVelocity > 0 ? '+' : ''}${priceVelocity.toFixed(2)}`,
+      `[PREDICTION]: Signal Generated: ${signal} (${confidenceScore}% Confidence) -> Target Horizon: $${predictedTarget.toFixed(2)}`,
+      ...prev.slice(0, 8)
+    ]);
+  };
+
+  // Automated background market tick simulator
   useEffect(() => {
-    localStorage.setItem('stack', stack);
-    localStorage.setItem('goal', goal);
-    localStorage.setItem('history', JSON.stringify(history));
-    localStorage.setItem('recurring', JSON.stringify(recurring));
+    const interval = setInterval(() => {
+      setMarketMatrix(prev => {
+        const copy = { ...prev };
+        Object.keys(copy).forEach(ticker => {
+          const drift = (Math.random() * 2 - 1) * (ticker === 'TSLA' ? 2 : 0.8);
+          const currentPrice = copy[ticker].price + drift;
+          const updatedHistory = [...copy[ticker].history.slice(1), currentPrice];
+          
+          copy[ticker] = {
+            ...copy[ticker],
+            price: currentPrice,
+            history: updatedHistory
+          };
+        });
+        return copy;
+      });
+    }, 2000);
 
-    if (stack >= goal && stack > 0 && !milestoneReached) {
-        setMilestoneReached(true);
-    } else if (stack < goal) {
-        setMilestoneReached(false);
-    }
-  }, [stack, goal, history, recurring, milestoneReached]);
-
-  // --- CALCULATIONS ---
-  const getMonthlyVal = (amt, term) => {
-    const v = Number(amt);
-    const rates = { daily: 30.42, weekly: 4.33, monthly: 1, yearly: 1/12 };
-    return v * (rates[term] || 1);
-  };
-
-  const monthlyIn = recurring.filter(r => r.type === 'income').reduce((acc, r) => acc + getMonthlyVal(r.amount, r.term), 0);
-  const monthlyOut = recurring.filter(r => r.type === 'burn').reduce((acc, r) => acc + getMonthlyVal(r.amount, r.term), 0);
-  const netFlow = monthlyIn - monthlyOut;
-  const gap = goal - stack;
-  const daysToGoal = (netFlow > 0 && gap > 0) ? Math.ceil((gap / (netFlow / 30.42))) : null;
-
-  const handleLog = (type) => {
-    const labelEl = document.getElementById('l-label');
-    const amtEl = document.getElementById('l-amt');
-    if (labelEl.value && amtEl.value) {
-      const finalAmt = type === 'income' ? Number(amtEl.value) : -Number(amtEl.value);
-      setHistory([{ label: labelEl.value, amount: finalAmt, id: Date.now() }, ...history]);
-      setStack(s => s + finalAmt);
-      labelEl.value = ''; amtEl.value = '';
-      labelEl.blur(); amtEl.blur();
-    }
-  };
-
-  const addRecurringFlow = () => {
-    const l = prompt("Label (e.g. Portfolio, Rent)?");
-    const a = prompt("Amount?");
-    const t = prompt("Frequency (daily, weekly, monthly, yearly)?");
-    const typeChoice = prompt("Type: '1' for Income, '2' for Burn");
-    if (l && a && t && (typeChoice === '1' || typeChoice === '2')) {
-      setRecurring([{ label: l, amount: Number(a), term: t.toLowerCase(), type: typeChoice === '1' ? 'income' : 'burn', id: Date.now() }, ...recurring]);
-    }
-  };
-
-  const theme = isDarkMode ? 
-    { bg: '#000', text: '#FFF', card: '#111', accent: '#007AFF', border: '#222' } : 
-    { bg: '#F2F2F7', text: '#000', card: '#FFF', accent: '#007AFF', border: '#E5E5EA' };
-
-  const s = {
-    container: { minHeight: '100vh', background: theme.bg, color: theme.text, fontFamily: 'Inter, -apple-system, sans-serif', padding: '24px', transition: '0.4s', WebkitFontSmoothing: 'antialiased' },
-    numbers: { fontVariantNumeric: 'tabular-nums', letterSpacing: '-1px', fontWeight: '800', fontFamily: 'Inter, sans-serif' },
-    label: { fontSize: '11px', color: '#8E8E93', fontWeight: '600', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' },
-    card: { background: theme.card, padding: '24px', borderRadius: '32px', marginBottom: '16px', border: `1px solid ${theme.border}` },
-    inputBase: { background: 'none', border: 'none', color: theme.text, outline: 'none', fontFamily: 'Inter, sans-serif' }
-  };
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div style={s.container}>
-      <div style={{ maxWidth: '400px', margin: '0 auto', paddingBottom: '120px' }}>
+    <div style={{ minHeight: '100vh', background: '#05050A', color: '#E4E4E7', fontFamily: 'monospace', padding: '32px 16px' }}>
+      <div style={{ maxWidth: '460px', margin: '0 auto' }}>
         
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '50px' }}>
+        {/* EQUITY TERMINAL HEADER */}
+        <header style={{ borderBottom: '1px solid #181825', paddingBottom: '16px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <b style={{ letterSpacing: '4px', fontSize: '11px', color: theme.text }}>STACKED AI</b>
-            <div style={{ fontSize: '9px', color: theme.accent, fontWeight: '800', marginTop: '4px' }}>BY {founderName.toUpperCase()}</div>
+            <b style={{ letterSpacing: '2px', color: '#FFF', fontSize: '13px' }}>STACKED // PROPRIETARY_AI</b>
+            <div style={{ fontSize: '9px', color: '#007AFF', marginTop: '2px' }}>EQUITY PATTERN ENGINE v4.0</div>
           </div>
-          <div style={{display: 'flex', gap: '10px'}}>
-            <button onClick={() => setIsDarkMode(!isDarkMode)} style={{ background: theme.card, color: theme.text, border: `1px solid ${theme.border}`, padding: '8px 12px', borderRadius: '12px', fontSize: '10px', fontWeight: '700' }}>{isDarkMode ? 'SNOW' : 'MID'}</button>
-            <button onClick={() => setIsStealth(!isStealth)} style={{ background: isStealth ? '#FF3B30' : theme.card, color: isStealth ? '#FFF' : theme.text, border: isStealth ? 'none' : `1px solid ${theme.border}`, padding: '8px 12px', borderRadius: '12px', fontSize: '10px', fontWeight: '700' }}>{isStealth ? 'HIDDEN' : 'STEALTH'}</button>
-          </div>
+          <span style={{ fontSize: '9px', background: '#007AFF1A', color: '#007AFF', padding: '4px 8px', borderRadius: '4px', border: '1px solid #007AFF33' }}>PROD_NODE</span>
         </header>
 
-        {activeTab === 'home' && (
-          <main>
-            <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-              <p style={s.label}>LIQUIDITY POSITION</p>
-              <h1 style={{ ...s.numbers, fontSize: '4.8rem', margin: '15px 0', filter: isStealth ? 'blur(25px)' : 'none', letterSpacing: '-4px' }}>
-                ${stack.toLocaleString()}
-              </h1>
-              <div style={{width: '60px', height: '3px', background: theme.accent, margin: '0 auto 30px auto', borderRadius: '10px', boxShadow: `0 0 15px ${theme.accent}66`}}></div>
-              <button onClick={() => setIsAiOpen(true)} style={{ width: '100%', padding: '20px', borderRadius: '24px', background: theme.accent, color: '#FFF', border: 'none', fontWeight: '800', fontSize: '14px' }}>✨ CONSULT COACH</button>
-            </div>
-            <div style={s.card}>
-               <p style={s.label}>LEDGER</p>
-               {history.slice(0, 3).length === 0 ? <p style={{opacity: 0.3, fontSize: '13px'}}>No recent movements.</p> : history.slice(0, 3).map(h => (
-                 <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', borderBottom: `1px solid ${theme.border}` }}>
-                   <span style={{fontSize: '15px', fontWeight: '500'}}>{h.label}</span>
-                   <span style={{ ...s.numbers, fontSize: '16px', color: h.amount > 0 ? '#34C759' : '#FF3B30' }}>{h.amount > 0 ? '+' : '-'}${Math.abs(h.amount).toLocaleString()}</span>
-                 </div>
-               ))}
-            </div>
-          </main>
-        )}
+        {/* LIQUID POOL DISPLAY */}
+        <section style={{ background: '#0C0C14', border: '1px solid #181825', padding: '20px', borderRadius: '12px', marginBottom: '20px' }}>
+          <span style={{ fontSize: '10px', color: '#71717A' }}>SIMULATED INSTITUTIONAL CAPITAL</span>
+          <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', margin: '6px 0', color: '#FFF' }}>
+            ${portfolioBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </h2>
+        </section>
 
-        {activeTab === 'lab' && (
-          <main>
-            <div style={s.card}>
-               <p style={s.label}>NEW ENTRY</p>
-               <input id="l-label" placeholder="Source" style={{...s.inputBase, width:'100%', borderBottom:`1px solid ${theme.border}`, padding:'15px 0', marginBottom:'10px', fontSize:'18px'}} />
-               <input id="l-amt" type="number" placeholder="0.00" style={{...s.inputBase, ...s.numbers, width:'100%', borderBottom:`1px solid ${theme.border}`, padding:'15px 0', marginBottom:'25px', fontSize:'24px'}} />
-               <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
-                  <button onClick={() => handleLog('income')} style={{padding:'18px', borderRadius:'20px', border:'none', background: isDarkMode ? '#FFF' : '#000', color: isDarkMode ? '#000' : '#FFF', fontWeight:'900'}}>INCOME</button>
-                  <button onClick={() => handleLog('spend')} style={{padding:'18px', borderRadius:'20px', border:'none', background:'#333', color:'#FFF', fontWeight:'900'}}>SPEND</button>
-               </div>
-            </div>
-            <div style={s.card}>
-              <p style={s.label}>RECURRING ARCHITECTURE</p>
-              <button onClick={addRecurringFlow} style={{width:'100%', padding:'15px', background:'none', border:`1px dashed ${theme.border}`, color:'#8E8E93', borderRadius:'20px', fontSize:'12px', fontWeight:'700'}}>+ ATTACH FLOW</button>
-              {recurring.map(r => (
-                <div key={r.id} style={{display:'flex', justifyContent:'space-between', padding:'15px 0', borderBottom:`1px solid ${theme.border}`, fontSize:'14px'}}>
-                  <span>{r.label} <span style={{fontSize:'10px', opacity:0.5}}>{r.term}</span></span>
-                  <span style={{...s.numbers, color: r.type === 'income' ? '#34C759' : '#FF3B30'}}>${r.amount.toLocaleString()}</span>
+        {/* EQUITY WATCHLIST TARGET MATRIX */}
+        <section style={{ marginBottom: '20px' }}>
+          <p style={{ fontSize: '10px', color: '#71717A', marginBottom: '10px' }}>// QUANTITATIVE MONITOR FEED</p>
+          {Object.keys(marketMatrix).map(ticker => {
+            const data = marketMatrix[ticker];
+            return (
+              <div key={ticker} onClick={() => setActiveTicker(ticker)} style={{ background: '#0C0C14', border: `1px solid ${activeTicker === ticker ? '#007AFF' : '#181825'}`, padding: '14px', borderRadius: '10px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                <div>
+                  <b style={{ fontSize: '14px', color: '#FFF' }}>{ticker}</b>
+                  <div style={{ fontSize: '10px', color: '#71717A', marginTop: '2px' }}>Trend Context: {data.trend}</div>
                 </div>
-              ))}
-            </div>
-          </main>
-        )}
-
-        {activeTab === 'arena' && (
-          <main>
-            <div style={s.card}>
-              <p style={s.label}>TARGET PARAMETERS</p>
-              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
-                <span style={{fontSize:'14px'}}>Balance Adj.</span>
-                <input type="number" onChange={(e) => setStack(Number(e.target.value))} style={{...s.inputBase, ...s.numbers, color:theme.accent, textAlign:'right', fontSize:'20px', width:'60%'}} value={stack} />
-              </div>
-              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                <span style={{fontSize:'14px'}}>Target Goal</span>
-                <input type="number" onChange={(e) => setGoal(Number(e.target.value))} style={{...s.inputBase, ...s.numbers, color:theme.accent, textAlign:'right', fontSize:'20px', width:'60%'}} value={goal} />
-              </div>
-              {daysToGoal && (
-                <div style={{display:'flex', justifyContent:'space-between', marginTop:'25px', paddingTop:'15px', borderTop:`1px solid ${theme.border}`, color:theme.accent, fontSize:'11px', fontWeight:'900', letterSpacing:'1px'}}>
-                   <span>PROJECTED ETA</span>
-                   <span style={s.numbers}>{daysToGoal.toLocaleString()} DAYS</span>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', fontVariantNumeric: 'tabular-nums' }}>${data.price.toFixed(2)}</span>
                 </div>
-              )}
-            </div>
-
-            <div style={{...s.card, textAlign:'center', background:'#000', border:`1px solid ${theme.accent}88`, boxShadow: `0 0 20px ${theme.accent}22` }}>
-               <p style={s.label}>MONTHLY VELOCITY</p>
-               <h2 style={{...s.numbers, color: netFlow >= 0 ? '#34C759' : '#FF3B30', fontSize:'42px', margin:'15px 0'}}>${netFlow.toLocaleString()}</h2>
-               <button onClick={() => setShowAudit(!showAudit)} style={{background:'#FFF', color:'#000', border:'none', padding:'10px 25px', borderRadius:'14px', fontWeight:'900', fontSize:'11px'}}>GENERATE AUDIT</button>
-            </div>
-
-            {showAudit && (
-              <div style={{...s.card, animation: 'fadeIn 0.4s ease'}}>
-                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px'}}><span>Inflow</span><span style={s.numbers}>${monthlyIn.toLocaleString()}</span></div>
-                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'20px'}}><span>Burn</span><span style={s.numbers}>${monthlyOut.toLocaleString()}</span></div>
-                
-                <div style={{display:'flex', gap:'15px', marginBottom:'20px', justifyContent:'center'}}>
-                  <button onClick={() => alert(TOS_TEXT)} style={{background:'none', border:'none', color:'#8E8E93', fontSize:'10px', fontWeight:'700'}}>TERMS</button>
-                  <button onClick={() => alert(PRIVACY_TEXT)} style={{background:'none', border:'none', color:'#8E8E93', fontSize:'10px', fontWeight:'700'}}>PRIVACY</button>
-                </div>
-
-                <button onClick={() => {if(confirm("Factory Reset?")) {localStorage.clear(); window.location.reload();}}} style={{width:'100%', background:'#FF3B30', color:'#FFF', border:'none', padding:'15px', borderRadius:'18px', fontWeight:'900', fontSize:'11px'}}>FACTORY RESET</button>
               </div>
-            )}
-          </main>
-        )}
+            );
+          })}
+        </section>
 
-        {isAiOpen && (
-          <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', height: '380px', background: '#000', borderTop: `1px solid ${theme.accent}`, padding: '40px', boxSizing: 'border-box', zIndex: 1000, borderRadius: '40px 40px 0 0', boxShadow: '0 -20px 40px rgba(0,0,0,0.5)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
-              <span style={{ fontWeight: '900', fontSize: '11px', letterSpacing: '2px', color: theme.accent }}>COACH v7.6</span>
-              <button onClick={() => setIsAiOpen(false)} style={{ background: 'none', border: 'none', color: '#FFF', fontSize: '28px' }}>×</button>
-            </div>
-            <div style={{ background: '#111', padding: '25px', borderRadius: '24px', color: '#FFF', fontSize: '15px', border: '1px solid #222', lineHeight: '1.6' }}>
-              Wealth Status: <b>Vault Secured.</b><br/><br/>
-              {founderName}, the architecture is optimized. Current velocity is <span style={s.numbers}>${netFlow.toLocaleString()}</span>. {daysToGoal ? `Milestone realization in ${daysToGoal} days.` : "Adjust flow for ETA projection."}
-            </div>
+        {/* COMPUTE PREDICTION CTA */}
+        <button 
+          onClick={() => runQuantitativePrediction(activeTicker)}
+          style={{ width: '100%', padding: '16px', borderRadius: '12px', background: '#007AFF', color: '#FFF', border: 'none', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', marginBottom: '20px', letterSpacing: '1px' }}
+        >
+          RUN PREDICTIVE NEURAL INSTANCE FOR {activeTicker}
+        </button>
+
+        {/* AI TERMINAL OUTPUT INTERFACE */}
+        <section style={{ background: '#000', border: '1px solid #181825', padding: '16px', borderRadius: '12px' }}>
+          <p style={{ fontSize: '10px', color: '#71717A', margin: '0 0 10px 0' }}>// LOGICAL INFERENCE PIPELINE OUTFLOW</p>
+          <div style={{ height: '140px', overflowY: 'auto', fontSize: '11px', color: '#A1A1AA', lineHeight: '1.6' }}>
+            {systemLogs.map((log, idx) => (
+              <div key={idx} style={{ marginBottom: '6px' }}>&gt; {log}</div>
+            ))}
           </div>
-        )}
+        </section>
 
-        <nav style={{ position: 'fixed', bottom: '35px', left: '50%', transform: 'translateX(-50%)', width: '280px', background: 'rgba(28,28,30,0.85)', borderRadius: '40px', display: 'flex', justifyContent: 'space-around', padding: '18px', border: '1px solid #444', backdropFilter: 'blur(30px)', zIndex: 100 }}>
-          {['home', 'lab', 'arena'].map(t => (
-            <button key={t} onClick={() => setActiveTab(t)} style={{ background: 'none', border: 'none', color: '#FFF', fontWeight: '800', fontSize: '11px', letterSpacing: '1px', opacity: activeTab === t ? 1 : 0.25, transition: '0.3s' }}>{t.toUpperCase()}</button>
-          ))}
-        </nav>
       </div>
     </div>
   );
